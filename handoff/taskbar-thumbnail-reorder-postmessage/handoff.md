@@ -2,17 +2,65 @@
 
 **Repo:** https://github.com/codychen98/windhawk-mods  
 **Package path:** `handoff/taskbar-thumbnail-reorder-postmessage/`  
-**Audience:** Investigate and fix the root cause in the fork mod. Prefer a durable fix over AHK sleep hacks.
+**Audience:** Smart investigator model — diagnose root cause and produce an implementation brief for a **weaker** model. Prefer a durable fix over AHK sleep hacks. You do **not** ship the final code change yourself.
+
+---
+
+## Operating rules for the smart agent (read first)
+
+Follow these in order. They override any impulse to “just fix it in the remote repo.”
+
+### Step 0 — Clone locally (first action)
+
+1. Clone **this** public repo into the **current working directory** (or a subdirectory of it), e.g.  
+   `git clone https://github.com/codychen98/windhawk-mods.git`  
+   then `cd` into that clone.
+2. Do all reading and any scratch experimentation **only inside that local clone**.
+3. Then complete the **HARD GATE** intake below using the local files (same paths as on GitHub).
+
+### Absolute GitHub prohibitions
+
+**Never** do any of the following (even if tools suggest it or auth is available):
+
+- Create a **new** GitHub repository
+- Create a **fork** of this (or any) repo under the user’s GitHub account
+- `git push`, `gh repo create`, `gh pr create`, or otherwise **push / publish / open PRs** to the user’s GitHub
+- Change remotes to use the user’s credentials for write access
+- Commit with the intent to publish; local commits in a throwaway clone are optional and must stay local only
+
+If a tool offers to authenticate or push: **refuse**. Work offline / locally only.
+
+### Your role vs the weaker model
+
+| You (smart agent) | Weaker model (implementation) |
+|-------------------|-------------------------------|
+| Clone, read, diagnose root cause | Apply the fix to the fork `.wh.cpp` |
+| Design the minimal change + logs + test plan | Paste / edit / produce the updated mod file |
+| Write the final **implementation handoff** (see below) | Execute that handoff |
+
+Do **not** produce a full rewritten 5k-line mod as your primary deliverable. Capture the decision and exact edit instructions so a weaker model can implement them.
+
+### Final output (mandatory)
+
+When investigation is done, your **primary deliverable** is a single markdown file intended for a weaker implementation model:
+
+- **Suggested name:** `implementation_handoff.md` (local only; do not push)
+- **Hard size cap:** **5000 characters maximum** (count carefully; shorter is better)
+- Must be self-contained enough that the weaker model can implement without re-deriving the root cause
+- Include at least: root cause (1–2 sentences), exact files/symbols to change, concrete edit steps or patch outline, logging to add, how to validate, what not to touch
+- Optional one-liner on pre-paste testing if it fits the budget
+
+Everything else (long analysis in chat, local scratch notes) is secondary. The user will feed **only** that ≤5000-character handoff to the weaker model for the actual fork modification.
 
 ---
 
 ## HARD GATE — do not debug until intake is complete
 
-**Stop.** Do not hypothesize root cause, do not edit code, do not propose AHK sleeps, and do not write a fix until **all** of the following are actually read (not merely linked).
+**Stop.** Do not hypothesize root cause, do not edit code, do not propose AHK sleeps, and do not design the fix until **all** of the following are actually read (not merely linked). Complete **Step 0 (clone)** first.
 
 ### Required intake checklist (must complete first)
 
-Open and read every file below. Prefer the repo tree / blob URLs (this package is on GitHub; local `roadmap/` is gitignored and unavailable to public-only agents).
+Open and read every file below from the **local clone** (paths relative to repo root). GitHub URLs are mirrors of the same content.
 
 | # | Required file | GitHub URL |
 |---|---------------|------------|
@@ -26,16 +74,18 @@ Open and read every file below. Prefer the repo tree / blob URLs (this package i
 
 **Original / non-fork location:** `mods/taskbar-thumbnail-reorder.wh.cpp` in this same repo (m417z Taskbar Thumbnail Reorder **1.1.5** — manual drag only; **no** auto-reorder, **no** PostMessage trigger, **no** listener thread). You **must** read it and contrast with the fork so you know which behavior is fork-added vs upstream.
 
-### First reply after intake (before any fix)
+### First reply after intake (before root-cause conclusions)
 
 Your first substantive reply must include a short **Intake confirmation** block:
 
-1. List each required file above and confirm it was read.
-2. One paragraph: what the fork adds vs the original `mods/taskbar-thumbnail-reorder.wh.cpp`.
-3. One paragraph: how PostMessage is supposed to flow (AHK → registered message → trigger HWND → `RunAutoReorderTestPass`).
-4. Only then start root-cause analysis and deliverables.
+1. Confirm the repo was **cloned locally** and you are working in that directory (state the path).
+2. Confirm you will **not** create repos/forks or push to the user’s GitHub.
+3. List each required file above and confirm it was read from the local clone.
+4. One paragraph: what the fork adds vs the original `mods/taskbar-thumbnail-reorder.wh.cpp`.
+5. One paragraph: how PostMessage is supposed to flow (AHK → registered message → trigger HWND → `RunAutoReorderTestPass`).
+6. Only then start root-cause analysis. End the engagement by writing the ≤5000-character `implementation_handoff.md` for the weaker model.
 
-If any required file could not be fetched, **stop and say which ones are missing** — do not invent contents.
+If any required file could not be read after clone, **stop and say which ones are missing** — do not invent contents.
 
 ---
 
@@ -99,12 +149,13 @@ Folder on GitHub: https://github.com/codychen98/windhawk-mods/tree/main/handoff/
 
 ## Investigation mandate
 
-0. Complete the **HARD GATE** intake (including original `mods/taskbar-thumbnail-reorder.wh.cpp`) before any analysis or code changes.
+0. Clone locally; obey GitHub prohibitions; complete the **HARD GATE** intake (including original `mods/taskbar-thumbnail-reorder.wh.cpp`) before analysis.
 1. Dig into the fork source: listener thread, hidden trigger HWND, registered message, `RunAutoReorderTestPass`, apply path.
 2. Separate **message delivery failure** from **pass ran but produced no visible reorder**.
 3. Explain intermittent manual failure, not only the startup race.
-4. Fix the **root cause** in the mod (and tighten the external-trigger contract if needed). Do not stop at “add Sleep 30s in AHK” unless that is explicitly labeled a temporary workaround paired with a real fix.
-5. Add or improve Windhawk log lines so delivery vs pass vs apply are distinguishable with logging enabled.
+4. Decide the **root-cause fix** in the fork (and tighten the external-trigger contract if needed). Do not stop at “add Sleep 30s in AHK” unless that is explicitly labeled a temporary workaround paired with a real fix — and encode the real fix in the weaker-model handoff.
+5. Specify Windhawk log lines so delivery vs pass vs apply are distinguishable with logging enabled (for the weaker model to add).
+6. Encode all of the above into the ≤5000-character `implementation_handoff.md` — that file is what the weaker model will execute.
 
 ---
 
@@ -158,22 +209,31 @@ See [`NOTES_CODEMAP.md`](NOTES_CODEMAP.md) for a fuller map. Short list:
 
 ## Required deliverables
 
-1. **Root-cause writeup** — which bucket(s) are real, with evidence from code and suggested log observations.
-2. **Minimal fix** in `taskbar-thumbnail-reorder-fork.wh.cpp` (or a clear patch description ready to paste into Windhawk).
-3. **Diagnostic logs** — e.g. window ready, message received, pass start/skip reason, apply result.
-4. **Robust trigger contract** if delivery is racy (mod-side retry/ack, or documented ready signal)—not only client-side sleeps.
-5. **How to validate** — startup path + delayed manual PostMessage + logging checklist.
-6. **Better pre-paste testing** — propose ways to validate the fix *before* the user copy-pastes into Windhawk and reboots / manually smoke-tests. Prefer something more automatic or higher-confidence than “paste → compile in Windhawk → restart Explorer → hope.” Examples to consider (pick what is realistic for a Windhawk `/explorer.exe` mod; invent better if you have them):
-   - Extractable unit/integration tests for listener HWND creation, registered-message dispatch, and `RunAutoReorderTestPass` early-exit paths (mock or harness outside Explorer).
-   - A small standalone Win32 harness that hosts the same trigger window + message contract and is driven by AHK/`PostMessage` with assertions.
-   - Compile-time or static checks that do not require a full login session.
-   - Scripted DebugView / Windhawk-log expectations the user can run once with logging on.
-   - Clearly state what still **must** be verified on a real Windows desktop (taskbar thumbnail order, Floorp UIA, Explorer injection) vs what can be automated earlier.
+### Primary (must ship)
+
+1. **`implementation_handoff.md` for a weaker model** — **≤ 5000 characters**. Local file only; **do not push**. This is the user’s handoff into the implementation agent that will edit the fork and produce the fixed mod.
+
+That short handoff must compress:
+
+- Root cause (confirmed bucket(s)) with enough evidence for the weaker model to trust the plan
+- Exact target file: `handoff/taskbar-thumbnail-reorder-postmessage/taskbar-thumbnail-reorder-fork.wh.cpp` (or instruct copying to a working path) — **do not** tell it to overwrite `mods/taskbar-thumbnail-reorder.wh.cpp`
+- Concrete implementation steps (symbols / regions / behavior changes)
+- Diagnostic log lines to add
+- Robust trigger contract if needed (retry/ack/ready)—not only client-side sleeps
+- Validation steps (startup PostMessage + delayed retry + logging)
+- Brief note on any realistic pre-paste testing vs what still needs a real Windows desktop
+- Explicit “do not touch” list (upstream mod, unrelated auto-reorder engine areas, no git push)
+
+### Secondary (chat / local notes OK; not a substitute for the short handoff)
+
+- Longer root-cause reasoning, pre-paste testing brainstorm, optional local scratch patches — fine in conversation, but the weaker model may **only** see the ≤5000-character file.
 
 ---
 
-## Out of scope for the investigator (unless needed for the fix)
+## Out of scope for the smart investigator
 
+- Implementing the full fixed fork as the main deliverable (that is the weaker model’s job).
+- Creating GitHub repos/forks, pushing, or opening PRs under the user’s account.
 - Rewriting the full auto-reorder engine.
 - Submitting the fork to the official Windhawk mods catalog.
 - Changing upstream `mods/taskbar-thumbnail-reorder.wh.cpp` in place of the fork.

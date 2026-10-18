@@ -6,6 +6,39 @@
 
 ---
 
+## HARD GATE — do not debug until intake is complete
+
+**Stop.** Do not hypothesize root cause, do not edit code, do not propose AHK sleeps, and do not write a fix until **all** of the following are actually read (not merely linked).
+
+### Required intake checklist (must complete first)
+
+Open and read every file below. Prefer the repo tree / blob URLs (this package is on GitHub; local `roadmap/` is gitignored and unavailable to public-only agents).
+
+| # | Required file | GitHub URL |
+|---|---------------|------------|
+| 1 | This brief | https://github.com/codychen98/windhawk-mods/blob/main/handoff/taskbar-thumbnail-reorder-postmessage/handoff.md |
+| 2 | Package folder (list + open siblings) | https://github.com/codychen98/windhawk-mods/tree/main/handoff/taskbar-thumbnail-reorder-postmessage |
+| 3 | Fork mod (v1.3.16, what the user runs) | https://github.com/codychen98/windhawk-mods/blob/main/handoff/taskbar-thumbnail-reorder-postmessage/taskbar-thumbnail-reorder-fork.wh.cpp |
+| 4 | Code map | https://github.com/codychen98/windhawk-mods/blob/main/handoff/taskbar-thumbnail-reorder-postmessage/NOTES_CODEMAP.md |
+| 5 | Live Windhawk settings | https://github.com/codychen98/windhawk-mods/blob/main/handoff/taskbar-thumbnail-reorder-postmessage/mod_settings.json |
+| 6 | AHK startup trigger | https://github.com/codychen98/windhawk-mods/blob/main/handoff/taskbar-thumbnail-reorder-postmessage/ahk_startup_trigger.ahk |
+| 7 | **Original non-fork mod** (upstream baseline) | https://github.com/codychen98/windhawk-mods/blob/main/mods/taskbar-thumbnail-reorder.wh.cpp |
+
+**Original / non-fork location:** `mods/taskbar-thumbnail-reorder.wh.cpp` in this same repo (m417z Taskbar Thumbnail Reorder **1.1.5** — manual drag only; **no** auto-reorder, **no** PostMessage trigger, **no** listener thread). You **must** read it and contrast with the fork so you know which behavior is fork-added vs upstream.
+
+### First reply after intake (before any fix)
+
+Your first substantive reply must include a short **Intake confirmation** block:
+
+1. List each required file above and confirm it was read.
+2. One paragraph: what the fork adds vs the original `mods/taskbar-thumbnail-reorder.wh.cpp`.
+3. One paragraph: how PostMessage is supposed to flow (AHK → registered message → trigger HWND → `RunAutoReorderTestPass`).
+4. Only then start root-cause analysis and deliverables.
+
+If any required file could not be fetched, **stop and say which ones are missing** — do not invent contents.
+
+---
+
 ## Symptom
 
 At Windows login the user:
@@ -25,7 +58,7 @@ PostMessage, %triggerMsg%, 0, 0,, ahk_class WindhawkThumbnailReorderTrigger
 Important distinction:
 
 - Mod setting `hotkeyEnabled` is **0**. The mod’s own F1 / `RegisterHotKey` path is off.
-- User F1 is **AHK** re-sending the registered window message to `ahk_class WindhawkThumbnailReorderTrigger`.
+- Historical note: the user previously retried by pressing F1 in an AHK script that called the same `PostMessage`. The checked-in [`ahk_startup_trigger.ahk`](ahk_startup_trigger.ahk) now runs elevated and calls `TriggerReorder()` once at script start (after Floorp windows are loaded).
 - Mod setting `autoReorderOnModLoad` is **0**. The one-shot timer pass is not used; reorder is expected only via PostMessage.
 
 See [`ahk_startup_trigger.ahk`](ahk_startup_trigger.ahk) and [`mod_settings.json`](mod_settings.json).
@@ -43,7 +76,7 @@ See [`ahk_startup_trigger.ahk`](ahk_startup_trigger.ahk) and [`mod_settings.json
 | Upstream baseline (no auto-reorder / no trigger) | [`../../mods/taskbar-thumbnail-reorder.wh.cpp`](../../mods/taskbar-thumbnail-reorder.wh.cpp) (m417z 1.1.5) |
 | Target app in rules | `floorp.exe` |
 | External trigger | `externalPostMessageTriggerEnabled: 1` |
-| AHK | 1.1, runs at startup then F1 for retry |
+| AHK | 1.1, startup script (elevated); calls `TriggerReorder()` once when run |
 
 ---
 
@@ -56,14 +89,17 @@ This package is committed so models with only public-fork access can work. Local
 | [`handoff.md`](handoff.md) | This brief |
 | [`taskbar-thumbnail-reorder-fork.wh.cpp`](taskbar-thumbnail-reorder-fork.wh.cpp) | Exact single-file mod the user pastes into Windhawk |
 | [`mod_settings.json`](mod_settings.json) | Live Windhawk settings snapshot |
-| [`ahk_startup_trigger.ahk`](ahk_startup_trigger.ahk) | AHK 1.1 trigger used at startup / F1 |
+| [`ahk_startup_trigger.ahk`](ahk_startup_trigger.ahk) | AHK 1.1 trigger used at startup |
 | [`NOTES_CODEMAP.md`](NOTES_CODEMAP.md) | Line anchors for trigger / listener / pass |
-| `mods/taskbar-thumbnail-reorder.wh.cpp` | Upstream original for side-by-side comparison |
+| [`mods/taskbar-thumbnail-reorder.wh.cpp`](../../mods/taskbar-thumbnail-reorder.wh.cpp) | **Original non-fork** upstream mod (required contrast) |
+
+Folder on GitHub: https://github.com/codychen98/windhawk-mods/tree/main/handoff/taskbar-thumbnail-reorder-postmessage
 
 ---
 
 ## Investigation mandate
 
+0. Complete the **HARD GATE** intake (including original `mods/taskbar-thumbnail-reorder.wh.cpp`) before any analysis or code changes.
 1. Dig into the fork source: listener thread, hidden trigger HWND, registered message, `RunAutoReorderTestPass`, apply path.
 2. Separate **message delivery failure** from **pass ran but produced no visible reorder**.
 3. Explain intermittent manual failure, not only the startup race.

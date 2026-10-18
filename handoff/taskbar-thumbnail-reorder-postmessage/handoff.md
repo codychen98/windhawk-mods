@@ -127,6 +127,12 @@ See [`NOTES_CODEMAP.md`](NOTES_CODEMAP.md) for a fuller map. Short list:
 3. **Diagnostic logs** — e.g. window ready, message received, pass start/skip reason, apply result.
 4. **Robust trigger contract** if delivery is racy (mod-side retry/ack, or documented ready signal)—not only client-side sleeps.
 5. **How to validate** — startup path + delayed manual PostMessage + logging checklist.
+6. **Better pre-paste testing** — propose ways to validate the fix *before* the user copy-pastes into Windhawk and reboots / manually smoke-tests. Prefer something more automatic or higher-confidence than “paste → compile in Windhawk → restart Explorer → hope.” Examples to consider (pick what is realistic for a Windhawk `/explorer.exe` mod; invent better if you have them):
+   - Extractable unit/integration tests for listener HWND creation, registered-message dispatch, and `RunAutoReorderTestPass` early-exit paths (mock or harness outside Explorer).
+   - A small standalone Win32 harness that hosts the same trigger window + message contract and is driven by AHK/`PostMessage` with assertions.
+   - Compile-time or static checks that do not require a full login session.
+   - Scripted DebugView / Windhawk-log expectations the user can run once with logging on.
+   - Clearly state what still **must** be verified on a real Windows desktop (taskbar thumbnail order, Floorp UIA, Explorer injection) vs what can be automated earlier.
 
 ---
 

@@ -2,7 +2,7 @@
 // @id              taskbar-thumbnail-reorder-fork
 // @name            Taskbar Thumbnail Reorder - Fork
 // @description     Reorder taskbar thumbnails manually; optional one-shot auto-reorder from JSON rules on mod load
-// @version         1.3.17
+// @version         1.3.18
 // @author          m417z
 // @github          https://github.com/m417z
 // @twitter         https://twitter.com/m417z
@@ -226,6 +226,7 @@ window.
 #include <commctrl.h>
 #include <psapi.h>
 
+#include <algorithm>
 #include <atomic>
 #include <cmath>
 #include <cstdarg>
@@ -4905,6 +4906,42 @@ bool ApplyFlyoutOnlyFromCacheImpl(
             AutoReorder_TraceStep2U(L"T29 flyout_cache:flyout_mapped_count",
                                     reinterpret_cast<ULONG_PTR>(taskGroup),
                                     flyoutMapped.size());
+
+            const std::vector<HWND> groupHwnds =
+                GetHwndsInTaskGroup(taskGroup);
+            size_t inGroup = 0;
+            for (HWND h : targetOrder) {
+                if (std::find(groupHwnds.begin(), groupHwnds.end(), h) !=
+                    groupHwnds.end()) {
+                    ++inGroup;
+                }
+            }
+            const bool topMapped =
+                !targetOrder.empty() &&
+                std::find(flyoutMapped.begin(), flyoutMapped.end(),
+                          targetOrder.front()) != flyoutMapped.end();
+            const bool partialCoverage =
+                inGroup >= 2 &&
+                (!topMapped || flyoutMapped.size() < inGroup);
+            if (partialCoverage) {
+                Wh_Log(L"partial flyout coverage (%zu mapped / %zu in group); "
+                       L"applying to group DPA",
+                       flyoutMapped.size(), inGroup);
+                for (size_t i = 0; i < flyoutMapped.size(); ++i) {
+                    Wh_Log(L"mapped[%zu] hwnd %p", i, flyoutMapped[i]);
+                }
+                for (size_t i = 0; i < groupHwnds.size(); ++i) {
+                    Wh_Log(L"group[%zu] hwnd %p", i, groupHwnds[i]);
+                }
+                if (ApplyOrderToTaskGroup(taskGroup, desktopId, targetOrder,
+                                          false)) {
+                    anyApplied = true;
+                    Wh_Log(L"group DPA reordered (%zu window(s))", inGroup);
+                    continue;
+                }
+                Wh_Log(L"group DPA reorder failed; falling back to flyout-only");
+            }
+
             if (flyoutMapped.size() < 2) {
                 QueuePendingXamlFlyoutOrder(taskGroup, targetOrder);
                 continue;
@@ -4925,7 +4962,10 @@ bool ApplyFlyoutOnlyFromCacheImpl(
                        appRule.app.c_str(), flyoutOrder.size());
             } else {
                 AutoReorder_TraceStep(L"T31 flyout_cache:after_try_xaml fail");
-                QueuePendingXamlFlyoutOrder(taskGroup, flyoutOrder);
+                // Keep full engine order queued when flyout coverage is partial.
+                QueuePendingXamlFlyoutOrder(
+                    taskGroup,
+                    (flyoutMapped.size() < inGroup) ? targetOrder : flyoutOrder);
             }
         }
     }
@@ -4977,14 +5017,26 @@ void QueuePendingFromEngineCache() {
 
             const std::vector<HWND> flyoutMapped =
                 GetFlyoutMappedHwndsForTaskGroup(taskGroup);
-            std::vector<HWND> flyoutOrder = targetOrder;
+            std::vector<HWND> orderToQueue = targetOrder;
             if (flyoutMapped.size() >= 2) {
-                flyoutOrder =
-                    BuildFlyoutAlignedApplyOrder(targetOrder, flyoutMapped);
+                const std::vector<HWND> groupHwnds =
+                    GetHwndsInTaskGroup(taskGroup);
+                size_t inGroup = 0;
+                for (HWND h : targetOrder) {
+                    if (std::find(groupHwnds.begin(), groupHwnds.end(), h) !=
+                        groupHwnds.end()) {
+                        ++inGroup;
+                    }
+                }
+                // Partial coverage: queue full engine order (not truncated).
+                if (flyoutMapped.size() >= inGroup) {
+                    orderToQueue =
+                        BuildFlyoutAlignedApplyOrder(targetOrder, flyoutMapped);
+                }
             }
 
-            if (flyoutOrder.size() >= 2) {
-                QueuePendingXamlFlyoutOrder(taskGroup, flyoutOrder);
+            if (orderToQueue.size() >= 2) {
+                QueuePendingXamlFlyoutOrder(taskGroup, orderToQueue);
                 queued = true;
             }
         }

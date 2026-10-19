@@ -1,6 +1,6 @@
 ; AutoHotkey 1.1 — run at Windows startup after Floorp/Firefox windows are loaded.
 ; Mod setting hotkeyEnabled is 0; this script does not use the mod's RegisterHotKey.
-; Relies on PostMessage to ahk_class WindhawkThumbnailReorderTrigger.
+; Relies on SendMessage + ack to ahk_class WindhawkThumbnailReorderTrigger.
 
 #NoEnv
 #SingleInstance Force
@@ -14,10 +14,20 @@ If not A_IsAdmin
     ExitApp
 }
 
+DetectHiddenWindows, On
+
 TriggerReorder() {
-    triggerMsg := DllCall("RegisterWindowMessage", "Str", "Windhawk.TaskbarThumbnailReorder.Trigger")
-    PostMessage, %triggerMsg%, 0, 0,, ahk_class WindhawkThumbnailReorderTrigger
+    m := DllCall("RegisterWindowMessage", "Str", "Windhawk.TaskbarThumbnailReorder.Trigger")
+    Loop, 20 {
+        WinWait, ahk_class WindhawkThumbnailReorderTrigger,, 3
+        if (!ErrorLevel) {
+            SendMessage, %m%, 0, 0,, ahk_class WindhawkThumbnailReorderTrigger,,,, 3000
+            if (ErrorLevel != "FAIL" && ErrorLevel+0 = 0x574841)
+                return true
+        }
+        Sleep, 2000
+    }
+    MsgBox, 48, Windhawk, Not acked (mod loaded?)
 }
 
-; Startup path: caller waits until windows are loaded, then invokes TriggerReorder().
 TriggerReorder()

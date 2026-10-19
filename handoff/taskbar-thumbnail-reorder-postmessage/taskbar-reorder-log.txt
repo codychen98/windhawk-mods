@@ -1,0 +1,377 @@
+17:54:11.385 [tid=17504] LoadSettings> Auto-reorder rules loaded: 1 apps, enabled=0, delay=20 s
+17:54:11.386 [tid=17504] Wh_ModInit> === mod load ===
+17:54:11.386 [tid=17504] GetExplorerVersion> Version: 10.0.22621.6199
+17:54:11.469 [tid=17504] Wh_ModAfterInit> >
+17:54:11.469 [tid=17504] UpdateReorderListener> Auto-reorder listener: thread started (hotkey=0 VK=0x0, PostMessage=1)
+17:54:11.473 [tid=17896] ReorderListenerThreadProc> Auto-reorder listener: PostMessage window ready (class=WindhawkThumbnailReorderTrigger, msg=Windhawk.TaskbarThumbnailReorder.Trigger, id=0xC26F)
+17:54:11.693 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:12.758 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:15.144 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:16.743 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:16.743 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:16.743 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:24.141 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:24.141 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:25.100 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:25.101 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:25.122 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:27.395 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:28.459 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:28.460 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:29.410 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:29.531 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:29.637 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:29.704 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:29.754 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:29.858 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:29.914 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:29.956 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:30.135 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:30.160 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:31.094 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:31.095 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:31.128 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:31.780 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:33.491 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:36.287 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:36.288 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:36.292 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:37.145 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:37.146 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:37.147 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:39.593 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:39.594 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:42.728 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:42.750 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:51.222 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:51.222 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:51.223 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:51.300 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:51.312 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:51.446 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:54:58.010 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:05.431 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:05.431 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:05.432 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:06.016 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:06.041 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:06.095 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:06.127 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:06.825 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:06.857 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:06.913 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:07.613 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:09.256 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:10.052 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:10.143 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:10.143 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:11.964 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:12.750 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:12.750 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:12.750 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:15.276 [tid=17896] ReorderTriggerWndProc> trigger msg received
+17:55:15.277 [tid=17896] HandleManualReorderTrigger> Auto-reorder: trigger from PostMessage
+17:55:15.277 [tid=17896] RunAutoReorderTestPass> Auto-reorder: manual pass (hotkey)
+17:55:15.277 [tid=17896] AutoReorder_TraceStep> Auto-reorder TRACE [tid=17896] T05 hotkey:before_engine
+17:55:15.277 [tid=17896] EnsureVirtualDesktopManager> Auto-reorder: IVirtualDesktopManager unavailable (0x80040154); using single-desktop mode
+17:55:15.279 [tid=17896] AutoReorder_TraceStepU> Auto-reorder TRACE [tid=17896] T80 enum_app_windows:enter val=0xef3f822
+17:55:15.284 [tid=17896] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=17896] T81 enum_app_windows:exit a=0x7 b=0
+17:55:15.506 [tid=17896] AutoReorder_ComputeAndLogOrders> Auto-reorder engine: desktop[0] app floorp.exe computed order (7 window(s)):
+17:55:15.506 [tid=17896] LogComputedOrder> Auto-reorder engine:   #1 hwnd 0000000000020BD4 (9 tab title(s))
+17:55:15.507 [tid=17896] LogComputedOrder> Auto-reorder engine:   #2 hwnd 0000000000010C20 (15 tab title(s))
+17:55:15.507 [tid=17896] LogComputedOrder> Auto-reorder engine:   #3 hwnd 0000000000010C1E (4 tab title(s))
+17:55:15.507 [tid=17896] LogComputedOrder> Auto-reorder engine:   #4 hwnd 0000000000010C24 (4 tab title(s))
+17:55:15.507 [tid=17896] LogComputedOrder> Auto-reorder engine:   #5 hwnd 0000000000010C22 (3 tab title(s))
+17:55:15.507 [tid=17896] LogComputedOrder> Auto-reorder engine:   #6 hwnd 0000000000010C1C (9 tab title(s))
+17:55:15.507 [tid=17896] LogComputedOrder> Auto-reorder engine:   #7 hwnd 0000000000010B8C (3 tab title(s))
+17:55:15.507 [tid=17896] AutoReorder_TraceStep> Auto-reorder TRACE [tid=17896] T06 hotkey:after_engine
+17:55:15.508 [tid=17896] AutoReorder_TraceStep> Auto-reorder TRACE [tid=17896] T07 hotkey:before_run_apply
+17:55:15.508 [tid=17896] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=17896] T10 run_apply:enter a=0x0 b=1
+17:55:15.508 [tid=17896] AutoReorder_TraceStep> Auto-reorder TRACE [tid=17896] T11 run_apply:before_mutex
+17:55:15.508 [tid=17896] AutoReorder_TraceStep> Auto-reorder TRACE [tid=17896] T11b run_apply:mutex_acquired
+17:55:15.508 [tid=17896] AutoReorder_TraceStep> Auto-reorder TRACE [tid=17896] T13 run_apply:queue_deferred_path
+17:55:15.508 [tid=17896] RunAutoReorderApplyOnTaskbarThread> Auto-reorder apply: queuing flyout-only apply (open or hover the taskbar preview)
+17:55:15.508 [tid=17896] MarkSessionApplyPending> Auto-reorder apply: session apply pending (hover the app's taskbar button to apply)
+17:55:15.509 [tid=17896] AutoReorder_TraceStep> Auto-reorder TRACE [tid=17896] T13b run_apply:queue_deferred_path_done
+17:55:15.509 [tid=17896] AutoReorder_TraceStep> Auto-reorder TRACE [tid=17896] T08 hotkey:after_run_apply
+17:55:15.509 [tid=17896] RunTriggerPassWithRetry> order cached
+17:55:15.721 [tid=10044] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10044] T01 deferred_timer:enter
+17:55:15.721 [tid=10044] DeferredApplyTimerCallback> Auto-reorder apply: deferred timer fired (off flyout hook stack)
+17:55:15.722 [tid=10044] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10044] T02 deferred_timer:before_run_apply
+17:55:15.722 [tid=10044] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=10044] T10 run_apply:enter a=0x1 b=1
+17:55:15.722 [tid=10044] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10044] T11 run_apply:before_mutex
+17:55:15.722 [tid=10044] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10044] T11b run_apply:mutex_acquired
+17:55:15.722 [tid=10044] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10044] T14 run_apply:before_flyout_cache
+17:55:15.722 [tid=10044] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10044] T19 flyout_cache_wrapper:enter
+17:55:15.722 [tid=10044] ApplyFlyoutOnlyFromCacheImpl> Auto-reorder apply: flyout-only safe pass (pending/cache only)
+17:55:15.722 [tid=10044] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=10044] T20 flyout_cache:enter a=0x0 b=1
+17:55:15.723 [tid=10044] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=10044] T23 flyout_cache:flyout_state a=0x0 b=0
+17:55:15.723 [tid=10044] ApplyFlyoutOnlyFromCacheImpl> Auto-reorder apply: flyout not open; hover the taskbar button to apply
+17:55:15.723 [tid=10044] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10044] T19b flyout_cache_wrapper:exit
+17:55:15.723 [tid=10044] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10044] T15 run_apply:after_flyout_cache
+17:55:15.723 [tid=10044] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10044] T03 deferred_timer:after_run_apply
+17:55:15.919 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:15.935 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:15.967 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:16.002 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:16.015 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:16.039 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:16.055 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:16.074 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:16.091 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:16.104 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:16.119 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:16.138 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:16.271 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:16.290 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:16.308 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:16.322 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:16.417 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:16.435 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:16.450 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:16.467 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:16.551 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:55:47.240 [tid=7704] HoverFlyoutModel_TargetItemKey_Hook> >
+17:55:47.240 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:55:47.251 [tid=7704] TaskGroup_Thumbnails_Hook> >
+17:55:47.251 [tid=7704] TaskGroup_Thumbnails_Hook> No previous thumbnails object
+17:55:47.251 [tid=7704] AutoReorder_TraceStep> Auto-reorder TRACE [tid=7704] T90 flyout_mapping_refreshed:enter
+17:55:47.251 [tid=7704] AutoReorder_TraceStep> Auto-reorder TRACE [tid=7704] T91 flyout_mapping_refreshed:schedule_deferred
+17:55:47.351 [tid=7704] HoverFlyoutModel_TargetItemKey_Hook> >
+17:55:47.352 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:55:47.352 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:55:47.352 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:55:47.352 [tid=7704] TaskGroup_Thumbnails_Hook> >
+17:55:47.352 [tid=7704] TaskGroup_Thumbnails_Hook> Different previous thumbnails object
+17:55:47.353 [tid=7704] RefreshCachedTaskGroupFromThumbnailMapping> Auto-reorder: cached flyout task group 000000000E558010 (3 thumbnail(s))
+17:55:47.353 [tid=7704] AutoReorder_TraceStepU> Auto-reorder TRACE [tid=7704] T78 try_pending:enter val=0xe558010
+17:55:47.353 [tid=7704] AutoReorder_TraceStep> Auto-reorder TRACE [tid=7704] T78b try_pending:exit not_queued
+17:55:47.353 [tid=7704] AutoReorder_TraceStep> Auto-reorder TRACE [tid=7704] T90 flyout_mapping_refreshed:enter
+17:55:47.458 [tid=10672] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10672] T01 deferred_timer:enter
+17:55:47.458 [tid=10672] DeferredApplyTimerCallback> Auto-reorder apply: deferred timer fired (off flyout hook stack)
+17:55:47.458 [tid=10672] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10672] T02 deferred_timer:before_run_apply
+17:55:47.458 [tid=10672] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=10672] T10 run_apply:enter a=0x1 b=1
+17:55:47.458 [tid=10672] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10672] T11 run_apply:before_mutex
+17:55:47.459 [tid=10672] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10672] T11b run_apply:mutex_acquired
+17:55:47.459 [tid=10672] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10672] T14 run_apply:before_flyout_cache
+17:55:47.459 [tid=10672] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10672] T19 flyout_cache_wrapper:enter
+17:55:47.459 [tid=10672] ApplyFlyoutOnlyFromCacheImpl> Auto-reorder apply: flyout-only safe pass (pending/cache only)
+17:55:47.459 [tid=10672] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=10672] T20 flyout_cache:enter a=0x0 b=1
+17:55:47.459 [tid=10672] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=10672] T23 flyout_cache:flyout_state a=0x1 b=1
+17:55:47.459 [tid=10672] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10672] T24 flyout_cache:before_enumerate_desktops
+17:55:47.459 [tid=10672] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=10672] T25 flyout_cache:after_enumerate_desktops a=0x1 b=0
+17:55:47.460 [tid=10672] AutoReorder_TraceStepU> Auto-reorder TRACE [tid=10672] T26 flyout_cache:app_loop val=0xef3f822
+17:55:47.460 [tid=10672] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10672] T27 flyout_cache:before_resolve_task_group
+17:55:47.460 [tid=10672] AutoReorder_TraceStepU> Auto-reorder TRACE [tid=10672] T28 flyout_cache:task_group val=0xe558010
+17:55:47.460 [tid=10672] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=10672] T29 flyout_cache:flyout_mapped_count a=0xe558010 b=3
+17:55:47.460 [tid=10672] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10672] T30 flyout_cache:before_try_xaml
+17:55:47.460 [tid=10672] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=10672] T70 xaml_apply:enter a=0xe558010 b=3
+17:55:47.460 [tid=10672] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=10672] T71 xaml_apply:thumbnails_size a=0x3 b=0
+17:55:47.460 [tid=10672] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=10672] T72 xaml_apply:mapped_current a=0x3 b=0
+17:55:47.460 [tid=10672] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10672] T73 xaml_apply:built_desired
+17:55:47.461 [tid=10672] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10672] T74 xaml_apply:before_move_loop
+17:55:47.461 [tid=10672] MoveItemsFromXAMLThumbnail> Moving from 2 to 1
+17:55:47.461 [tid=10672] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=10672] T77 xaml_move:enter a=0x2 b=1
+17:55:47.461 [tid=10672] MoveItemsFromXAMLThumbnail> Moving from 1 to 0
+17:55:47.461 [tid=10672] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=10672] T77 xaml_move:enter a=0x1 b=0
+17:55:47.461 [tid=10672] MoveItemsFromXAMLThumbnail> Moving from 2 to 1
+17:55:47.461 [tid=10672] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=10672] T77 xaml_move:enter a=0x2 b=1
+17:55:47.461 [tid=10672] TryApplyXamlFlyoutOrder> Auto-reorder apply: updated Win11 flyout preview (3 item(s))
+17:55:47.462 [tid=10672] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10672] T76 xaml_apply:exit ok
+17:55:47.462 [tid=10672] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10672] T31 flyout_cache:after_try_xaml ok
+17:55:47.462 [tid=10672] ApplyFlyoutOnlyFromCacheImpl> Auto-reorder apply: flyout preview updated from cache for floorp.exe (3 thumbnail(s))
+17:55:47.462 [tid=10672] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10672] T32 flyout_cache:exit
+17:55:47.462 [tid=10672] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10672] T19b flyout_cache_wrapper:exit
+17:55:47.462 [tid=10672] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10672] T15 run_apply:after_flyout_cache
+17:55:47.463 [tid=10672] AutoReorder_TraceStep> Auto-reorder TRACE [tid=10672] T03 deferred_timer:after_run_apply
+17:55:50.826 [tid=7704] HoverFlyoutModel_TargetItemKey_Hook> >
+17:55:50.826 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:55:50.827 [tid=7704] TaskGroup_Thumbnails_Hook> >
+17:55:50.827 [tid=7704] TaskGroup_Thumbnails_Hook> Different previous thumbnails object
+17:55:50.827 [tid=7704] RefreshCachedTaskGroupFromThumbnailMapping> Auto-reorder: cached flyout task group 000000000E558010 (3 thumbnail(s))
+17:55:50.827 [tid=7704] AutoReorder_TraceStepU> Auto-reorder TRACE [tid=7704] T78 try_pending:enter val=0xe558010
+17:55:50.827 [tid=7704] AutoReorder_TraceStep> Auto-reorder TRACE [tid=7704] T78b try_pending:exit not_queued
+17:55:50.827 [tid=7704] AutoReorder_TraceStep> Auto-reorder TRACE [tid=7704] T90 flyout_mapping_refreshed:enter
+17:55:50.861 [tid=7704] HoverFlyoutModel_TargetItemKey_Hook> >
+17:55:50.861 [tid=7704] TaskGroup_Thumbnails_Hook> >
+17:55:50.861 [tid=7704] TaskGroup_Thumbnails_Hook> Same previous thumbnails object
+17:55:50.980 [tid=7704] HoverFlyoutModel_TargetItemKey_Hook> >
+17:55:51.377 [tid=7704] HoverFlyoutModel_TargetItemKey_Hook> >
+17:55:51.377 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:55:51.377 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:55:51.378 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:55:51.378 [tid=7704] TaskGroup_Thumbnails_Hook> >
+17:55:51.378 [tid=7704] TaskGroup_Thumbnails_Hook> No previous thumbnails object
+17:55:51.378 [tid=7704] RefreshCachedTaskGroupFromThumbnailMapping> Auto-reorder: cached flyout task group 000000000E558010 (3 thumbnail(s))
+17:55:51.378 [tid=7704] AutoReorder_TraceStepU> Auto-reorder TRACE [tid=7704] T78 try_pending:enter val=0xe558010
+17:55:51.378 [tid=7704] AutoReorder_TraceStep> Auto-reorder TRACE [tid=7704] T78b try_pending:exit not_queued
+17:55:51.379 [tid=7704] AutoReorder_TraceStep> Auto-reorder TRACE [tid=7704] T90 flyout_mapping_refreshed:enter
+17:55:51.734 [tid=7704] HoverFlyoutModel_TargetItemKey_Hook> >
+17:55:51.734 [tid=7704] TaskGroup_Thumbnails_Hook> >
+17:55:51.734 [tid=7704] TaskGroup_Thumbnails_Hook> Same previous thumbnails object
+17:56:05.413 [tid=7704] HoverFlyoutModel_TargetItemKey_Hook> >
+17:56:07.433 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:56:07.435 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:56:07.501 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:56:08.005 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:56:08.005 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:56:08.005 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:56:12.755 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:56:29.127 [tid=7704] HoverFlyoutModel_TargetItemKey_Hook> >
+17:56:29.127 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:56:29.127 [tid=7704] TaskGroup_Thumbnails_Hook> >
+17:56:29.127 [tid=7704] TaskGroup_Thumbnails_Hook> No previous thumbnails object
+17:56:29.128 [tid=7704] AutoReorder_TraceStepU> Auto-reorder TRACE [tid=7704] T78 try_pending:enter val=0xe558010
+17:56:29.128 [tid=7704] AutoReorder_TraceStep> Auto-reorder TRACE [tid=7704] T78b try_pending:exit not_queued
+17:56:29.128 [tid=7704] AutoReorder_TraceStep> Auto-reorder TRACE [tid=7704] T90 flyout_mapping_refreshed:enter
+17:56:29.159 [tid=7704] HoverFlyoutModel_TargetItemKey_Hook> >
+17:56:29.159 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:56:29.159 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:56:29.159 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:56:29.160 [tid=7704] TaskGroup_Thumbnails_Hook> >
+17:56:29.160 [tid=7704] TaskGroup_Thumbnails_Hook> Different previous thumbnails object
+17:56:29.160 [tid=7704] RefreshCachedTaskGroupFromThumbnailMapping> Auto-reorder: cached flyout task group 000000000E558010 (3 thumbnail(s))
+17:56:29.160 [tid=7704] AutoReorder_TraceStepU> Auto-reorder TRACE [tid=7704] T78 try_pending:enter val=0xe558010
+17:56:29.160 [tid=7704] AutoReorder_TraceStep> Auto-reorder TRACE [tid=7704] T78b try_pending:exit not_queued
+17:56:29.160 [tid=7704] AutoReorder_TraceStep> Auto-reorder TRACE [tid=7704] T90 flyout_mapping_refreshed:enter
+17:56:29.231 [tid=7704] HoverFlyoutModel_TargetItemKey_Hook> >
+17:56:29.451 [tid=7704] HoverFlyoutModel_TargetItemKey_Hook> >
+17:56:29.451 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:56:29.451 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:56:29.451 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:56:29.452 [tid=7704] TaskGroup_Thumbnails_Hook> >
+17:56:29.452 [tid=7704] TaskGroup_Thumbnails_Hook> No previous thumbnails object
+17:56:29.452 [tid=7704] RefreshCachedTaskGroupFromThumbnailMapping> Auto-reorder: cached flyout task group 000000000E558010 (3 thumbnail(s))
+17:56:29.452 [tid=7704] AutoReorder_TraceStepU> Auto-reorder TRACE [tid=7704] T78 try_pending:enter val=0xe558010
+17:56:29.452 [tid=7704] AutoReorder_TraceStep> Auto-reorder TRACE [tid=7704] T78b try_pending:exit not_queued
+17:56:29.452 [tid=7704] AutoReorder_TraceStep> Auto-reorder TRACE [tid=7704] T90 flyout_mapping_refreshed:enter
+17:56:30.507 [tid=7704] HoverFlyoutModel_TargetItemKey_Hook> >
+17:56:30.507 [tid=7704] TaskGroup_Thumbnails_Hook> >
+17:56:30.507 [tid=7704] TaskGroup_Thumbnails_Hook> Same previous thumbnails object
+17:56:30.649 [tid=7704] HoverFlyoutModel_TargetItemKey_Hook> >
+17:56:31.786 [tid=17896] ReorderTriggerWndProc> trigger msg received
+17:56:31.786 [tid=17896] HandleManualReorderTrigger> Auto-reorder: trigger from PostMessage
+17:56:31.786 [tid=17896] RunAutoReorderTestPass> Auto-reorder: manual pass (hotkey)
+17:56:31.786 [tid=17896] AutoReorder_TraceStep> Auto-reorder TRACE [tid=17896] T05 hotkey:before_engine
+17:56:31.787 [tid=17896] AutoReorder_TraceStepU> Auto-reorder TRACE [tid=17896] T80 enum_app_windows:enter val=0xef3f822
+17:56:31.789 [tid=17896] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=17896] T81 enum_app_windows:exit a=0x7 b=0
+17:56:31.945 [tid=17896] AutoReorder_ComputeAndLogOrders> Auto-reorder engine: desktop[0] app floorp.exe computed order (7 window(s)):
+17:56:31.945 [tid=17896] LogComputedOrder> Auto-reorder engine:   #1 hwnd 0000000000020BD4 (9 tab title(s))
+17:56:31.946 [tid=17896] LogComputedOrder> Auto-reorder engine:   #2 hwnd 0000000000010C20 (15 tab title(s))
+17:56:31.946 [tid=17896] LogComputedOrder> Auto-reorder engine:   #3 hwnd 0000000000010C1E (4 tab title(s))
+17:56:31.946 [tid=17896] LogComputedOrder> Auto-reorder engine:   #4 hwnd 0000000000010C24 (4 tab title(s))
+17:56:31.946 [tid=17896] LogComputedOrder> Auto-reorder engine:   #5 hwnd 0000000000010C22 (3 tab title(s))
+17:56:31.946 [tid=17896] LogComputedOrder> Auto-reorder engine:   #6 hwnd 0000000000010C1C (9 tab title(s))
+17:56:31.946 [tid=17896] LogComputedOrder> Auto-reorder engine:   #7 hwnd 0000000000010B8C (3 tab title(s))
+17:56:31.946 [tid=17896] AutoReorder_TraceStep> Auto-reorder TRACE [tid=17896] T06 hotkey:after_engine
+17:56:31.946 [tid=17896] AutoReorder_TraceStep> Auto-reorder TRACE [tid=17896] T07 hotkey:before_run_apply
+17:56:31.947 [tid=17896] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=17896] T10 run_apply:enter a=0x0 b=1
+17:56:31.947 [tid=17896] AutoReorder_TraceStep> Auto-reorder TRACE [tid=17896] T11 run_apply:before_mutex
+17:56:31.947 [tid=17896] AutoReorder_TraceStep> Auto-reorder TRACE [tid=17896] T11b run_apply:mutex_acquired
+17:56:31.947 [tid=17896] AutoReorder_TraceStep> Auto-reorder TRACE [tid=17896] T13 run_apply:queue_deferred_path
+17:56:31.947 [tid=17896] RunAutoReorderApplyOnTaskbarThread> Auto-reorder apply: queuing flyout-only apply (open or hover the taskbar preview)
+17:56:31.947 [tid=17896] QueuePendingXamlFlyoutOrder> Auto-reorder apply: flyout preview was closed; reorder queued for task group 000000000E558010 (3 window(s); hover the taskbar button to apply)
+17:56:31.947 [tid=17896] QueuePendingFromEngineCache> Auto-reorder apply: queued engine order for next flyout open
+17:56:31.948 [tid=17896] MarkSessionApplyPending> Auto-reorder apply: session apply pending (hover the taskbar button if the preview was closed)
+17:56:31.948 [tid=17896] AutoReorder_TraceStep> Auto-reorder TRACE [tid=17896] T13b run_apply:queue_deferred_path_done
+17:56:31.948 [tid=17896] AutoReorder_TraceStep> Auto-reorder TRACE [tid=17896] T08 hotkey:after_run_apply
+17:56:31.948 [tid=17896] RunTriggerPassWithRetry> order cached
+17:56:32.151 [tid=8108] AutoReorder_TraceStep> Auto-reorder TRACE [tid=8108] T01 deferred_timer:enter
+17:56:32.151 [tid=8108] DeferredApplyTimerCallback> Auto-reorder apply: deferred timer fired (off flyout hook stack)
+17:56:32.151 [tid=8108] AutoReorder_TraceStep> Auto-reorder TRACE [tid=8108] T02 deferred_timer:before_run_apply
+17:56:32.151 [tid=8108] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=8108] T10 run_apply:enter a=0x1 b=1
+17:56:32.151 [tid=8108] AutoReorder_TraceStep> Auto-reorder TRACE [tid=8108] T11 run_apply:before_mutex
+17:56:32.151 [tid=8108] AutoReorder_TraceStep> Auto-reorder TRACE [tid=8108] T11b run_apply:mutex_acquired
+17:56:32.151 [tid=8108] AutoReorder_TraceStep> Auto-reorder TRACE [tid=8108] T14 run_apply:before_flyout_cache
+17:56:32.152 [tid=8108] AutoReorder_TraceStep> Auto-reorder TRACE [tid=8108] T19 flyout_cache_wrapper:enter
+17:56:32.152 [tid=8108] ApplyFlyoutOnlyFromCacheImpl> Auto-reorder apply: flyout-only safe pass (pending/cache only)
+17:56:32.152 [tid=8108] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=8108] T20 flyout_cache:enter a=0x1 b=1
+17:56:32.152 [tid=8108] AutoReorder_TraceStepU> Auto-reorder TRACE [tid=8108] T21 flyout_cache:before_try_pending val=0xe558010
+17:56:32.152 [tid=8108] AutoReorder_TraceStepU> Auto-reorder TRACE [tid=8108] T78 try_pending:enter val=0xe558010
+17:56:32.153 [tid=8108] AutoReorder_TraceStep> Auto-reorder TRACE [tid=8108] T79 try_pending:before_try_xaml
+17:56:32.153 [tid=8108] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=8108] T70 xaml_apply:enter a=0xe558010 b=3
+17:56:32.153 [tid=8108] AutoReorder_TraceStep> Auto-reorder TRACE [tid=8108] T70b xaml_apply:exit no_thumbnails
+17:56:32.153 [tid=8108] AutoReorder_TryApplyPendingXamlFlyoutOrder> Auto-reorder apply: queued flyout reorder not ready yet (3 window(s); will retry on next hover)
+17:56:32.153 [tid=8108] AutoReorder_TraceStepU> Auto-reorder TRACE [tid=8108] T22 flyout_cache:after_try_pending val=0xe558010
+17:56:32.153 [tid=8108] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=8108] T23 flyout_cache:flyout_state a=0x0 b=1
+17:56:32.153 [tid=8108] AutoReorder_TraceStep> Auto-reorder TRACE [tid=8108] T24 flyout_cache:before_enumerate_desktops
+17:56:32.153 [tid=8108] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=8108] T25 flyout_cache:after_enumerate_desktops a=0x1 b=0
+17:56:32.153 [tid=8108] AutoReorder_TraceStepU> Auto-reorder TRACE [tid=8108] T26 flyout_cache:app_loop val=0xef3f822
+17:56:32.154 [tid=8108] AutoReorder_TraceStep> Auto-reorder TRACE [tid=8108] T27 flyout_cache:before_resolve_task_group
+17:56:32.154 [tid=8108] AutoReorder_TraceStepU> Auto-reorder TRACE [tid=8108] T28 flyout_cache:task_group val=0xe558010
+17:56:32.154 [tid=8108] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=8108] T29 flyout_cache:flyout_mapped_count a=0xe558010 b=3
+17:56:32.154 [tid=8108] AutoReorder_TraceStep> Auto-reorder TRACE [tid=8108] T30 flyout_cache:before_try_xaml
+17:56:32.154 [tid=8108] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=8108] T70 xaml_apply:enter a=0xe558010 b=3
+17:56:32.154 [tid=8108] AutoReorder_TraceStep> Auto-reorder TRACE [tid=8108] T70b xaml_apply:exit no_thumbnails
+17:56:32.154 [tid=8108] AutoReorder_TraceStep> Auto-reorder TRACE [tid=8108] T31 flyout_cache:after_try_xaml fail
+17:56:32.154 [tid=8108] QueuePendingXamlFlyoutOrder> Auto-reorder apply: flyout preview was closed; reorder queued for task group 000000000E558010 (3 window(s); hover the taskbar button to apply)
+17:56:32.154 [tid=8108] AutoReorder_TraceStep> Auto-reorder TRACE [tid=8108] T32 flyout_cache:exit
+17:56:32.155 [tid=8108] AutoReorder_TraceStep> Auto-reorder TRACE [tid=8108] T19b flyout_cache_wrapper:exit
+17:56:32.155 [tid=8108] AutoReorder_TraceStep> Auto-reorder TRACE [tid=8108] T15 run_apply:after_flyout_cache
+17:56:32.155 [tid=8108] AutoReorder_TraceStep> Auto-reorder TRACE [tid=8108] T03 deferred_timer:after_run_apply
+17:56:35.524 [tid=7704] HoverFlyoutModel_TargetItemKey_Hook> >
+17:56:35.525 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:56:35.525 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:56:35.525 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:56:35.525 [tid=7704] TaskGroup_Thumbnails_Hook> >
+17:56:35.525 [tid=7704] TaskGroup_Thumbnails_Hook> No previous thumbnails object
+17:56:35.525 [tid=7704] RefreshCachedTaskGroupFromThumbnailMapping> Auto-reorder: cached flyout task group 000000000E558010 (3 thumbnail(s))
+17:56:35.525 [tid=7704] QueuePendingXamlFlyoutOrder> Auto-reorder apply: flyout preview was closed; reorder queued for task group 000000000E558010 (3 window(s); hover the taskbar button to apply)
+17:56:35.526 [tid=7704] QueuePendingFromEngineCache> Auto-reorder apply: queued engine order for next flyout open
+17:56:35.526 [tid=7704] AutoReorder_TraceStepU> Auto-reorder TRACE [tid=7704] T78 try_pending:enter val=0xe558010
+17:56:35.526 [tid=7704] AutoReorder_TraceStep> Auto-reorder TRACE [tid=7704] T79 try_pending:before_try_xaml
+17:56:35.526 [tid=7704] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=7704] T70 xaml_apply:enter a=0xe558010 b=3
+17:56:35.527 [tid=7704] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=7704] T71 xaml_apply:thumbnails_size a=0x3 b=0
+17:56:35.527 [tid=7704] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=7704] T72 xaml_apply:mapped_current a=0x3 b=0
+17:56:35.527 [tid=7704] AutoReorder_TraceStep> Auto-reorder TRACE [tid=7704] T73 xaml_apply:built_desired
+17:56:35.527 [tid=7704] AutoReorder_TraceStep> Auto-reorder TRACE [tid=7704] T74 xaml_apply:before_move_loop
+17:56:35.527 [tid=7704] MoveItemsFromXAMLThumbnail> Moving from 2 to 1
+17:56:35.527 [tid=7704] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=7704] T77 xaml_move:enter a=0x2 b=1
+17:56:35.527 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:56:35.528 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:56:35.528 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:56:35.528 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:56:35.529 [tid=7704] MoveItemsFromXAMLThumbnail> Moving from 1 to 0
+17:56:35.529 [tid=7704] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=7704] T77 xaml_move:enter a=0x1 b=0
+17:56:35.529 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:56:35.529 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:56:35.529 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:56:35.530 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:56:35.530 [tid=7704] MoveItemsFromXAMLThumbnail> Moving from 2 to 1
+17:56:35.530 [tid=7704] AutoReorder_TraceStep2U> Auto-reorder TRACE [tid=7704] T77 xaml_move:enter a=0x2 b=1
+17:56:35.530 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:56:35.531 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:56:35.531 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:56:35.531 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:56:35.531 [tid=7704] TryApplyXamlFlyoutOrder> Auto-reorder apply: updated Win11 flyout preview (3 item(s))
+17:56:35.532 [tid=7704] AutoReorder_TraceStep> Auto-reorder TRACE [tid=7704] T76 xaml_apply:exit ok
+17:56:35.532 [tid=7704] AutoReorder_TryApplyPendingXamlFlyoutOrder> Auto-reorder apply: applied queued flyout preview reorder (3 window(s))
+17:56:37.240 [tid=7704] HoverFlyoutModel_TargetItemKey_Hook> >
+17:56:37.241 [tid=7704] TaskGroup_Thumbnails_Hook> >
+17:56:37.241 [tid=7704] TaskGroup_Thumbnails_Hook> Same previous thumbnails object
+17:56:37.588 [tid=7704] HoverFlyoutModel_TargetItemKey_Hook> >
+17:56:38.155 [tid=7704] HoverFlyoutModel_TargetItemKey_Hook> >
+17:56:38.155 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:56:38.156 [tid=7704] TaskGroup_Thumbnails_Hook> >
+17:56:38.156 [tid=7704] TaskGroup_Thumbnails_Hook> No previous thumbnails object
+17:56:38.156 [tid=7704] AutoReorder_TraceStepU> Auto-reorder TRACE [tid=7704] T78 try_pending:enter val=0xe558010
+17:56:38.156 [tid=7704] AutoReorder_TraceStep> Auto-reorder TRACE [tid=7704] T78b try_pending:exit not_queued
+17:56:38.156 [tid=7704] AutoReorder_TraceStep> Auto-reorder TRACE [tid=7704] T90 flyout_mapping_refreshed:enter
+17:56:38.566 [tid=7704] HoverFlyoutModel_TargetItemKey_Hook> >
+17:56:38.566 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:56:38.567 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:56:38.567 [tid=7704] TaskItemThumbnail_TaskItemThumbnail_Hook> >
+17:56:38.567 [tid=7704] TaskGroup_Thumbnails_Hook> >
+17:56:38.567 [tid=7704] TaskGroup_Thumbnails_Hook> Different previous thumbnails object
+17:56:38.568 [tid=7704] RefreshCachedTaskGroupFromThumbnailMapping> Auto-reorder: cached flyout task group 000000000E558010 (3 thumbnail(s))
+17:56:38.568 [tid=7704] AutoReorder_TraceStepU> Auto-reorder TRACE [tid=7704] T78 try_pending:enter val=0xe558010
+17:56:38.568 [tid=7704] AutoReorder_TraceStep> Auto-reorder TRACE [tid=7704] T78b try_pending:exit not_queued
+17:56:38.568 [tid=7704] AutoReorder_TraceStep> Auto-reorder TRACE [tid=7704] T90 flyout_mapping_refreshed:enter
+17:56:41.601 [tid=7704] HoverFlyoutModel_TargetItemKey_Hook> >
+17:56:41.601 [tid=7704] TaskGroup_Thumbnails_Hook> >
+17:56:41.601 [tid=7704] TaskGroup_Thumbnails_Hook> Same previous thumbnails object
+17:56:41.719 [tid=7704] HoverFlyoutModel_TargetItemKey_Hook> >
+17:56:43.004 [tid=7704] TaskItemFilter_IsTaskAllowed_Hook> >
+17:56:53.805 [tid=17504] Wh_ModUninit> >
+17:56:53.805 [tid=17504] Wh_ModUninit> === mod unload ===
+17:56:53.810 [tid=17896] ReorderListenerThreadProc> Auto-reorder listener: thread exiting

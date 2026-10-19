@@ -2,7 +2,7 @@
 // @id              taskbar-thumbnail-reorder-fork
 // @name            Taskbar Thumbnail Reorder - Fork
 // @description     Reorder taskbar thumbnails manually; optional one-shot auto-reorder from JSON rules on mod load
-// @version         1.3.16
+// @version         1.3.17
 // @author          m417z
 // @github          https://github.com/m417z
 // @twitter         https://twitter.com/m417z
@@ -211,6 +211,12 @@ window.
     hotkey is disabled. AutoHotkey 1.1: triggerMsg := DllCall(
     "RegisterWindowMessage", "Str", "Windhawk.TaskbarThumbnailReorder.Trigger");
     PostMessage, %triggerMsg%, 0, 0,, ahk_class WindhawkThumbnailReorderTrigger
+- fileLogEnabled: false
+  $name: Desktop file log
+  $description: >-
+    When enabled, append the same diagnostic lines to
+    Desktop\taskbar-reorder-log.txt (in addition to the Windhawk log). Useful
+    when verifying PostMessage delivery and reorder retries after login.
 */
 // ==/WindhawkModSettings==
 
@@ -222,13 +228,99 @@ window.
 
 #include <atomic>
 #include <cmath>
+#include <cstdarg>
 #include <functional>
+#include <mutex>
 #include <optional>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
 #undef GetCurrentTime
+
+std::atomic<bool> g_fileLogEnabled{false};
+
+void FileLogLine(PCWSTR fmt, ...) {
+    if (!g_fileLogEnabled.load()) {
+        return;
+    }
+
+    static std::mutex fileLogMutex;
+    std::lock_guard<std::mutex> lock(fileLogMutex);
+
+    // Resolve Desktop without shlobj.h — that header defines
+    // IVirtualDesktopManager and conflicts with this fork's local MIDL iface.
+    static std::wstring logPath;
+    if (logPath.empty()) {
+        wchar_t userProfile[MAX_PATH];
+        const DWORD n =
+            GetEnvironmentVariableW(L"USERPROFILE", userProfile, MAX_PATH);
+        if (n == 0 || n >= MAX_PATH) {
+            return;
+        }
+        logPath = userProfile;
+        logPath += L"\\Desktop\\taskbar-reorder-log.txt";
+    }
+
+    SYSTEMTIME st{};
+    GetLocalTime(&st);
+
+    wchar_t prefix[64];
+    swprintf_s(prefix, L"%02u:%02u:%02u.%03u [tid=%lu] ", st.wHour, st.wMinute,
+               st.wSecond, st.wMilliseconds, GetCurrentThreadId());
+
+    wchar_t body[2048];
+    va_list args;
+    va_start(args, fmt);
+    _vsnwprintf_s(body, _TRUNCATE, fmt, args);
+    va_end(args);
+
+    std::wstring line = prefix;
+    line += body;
+
+    int bytes = WideCharToMultiByte(CP_UTF8, 0, line.c_str(), -1, nullptr, 0,
+                                    nullptr, nullptr);
+    if (bytes <= 1) {
+        return;
+    }
+
+    std::string utf8(static_cast<size_t>(bytes - 1), '\0');
+    WideCharToMultiByte(CP_UTF8, 0, line.c_str(), -1, utf8.data(), bytes,
+                        nullptr, nullptr);
+    utf8 += "\r\n";
+
+    HANDLE file =
+        CreateFileW(logPath.c_str(), FILE_APPEND_DATA, FILE_SHARE_READ, nullptr,
+                    OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (file == INVALID_HANDLE_VALUE) {
+        return;
+    }
+
+    DWORD written = 0;
+    WriteFile(file, utf8.data(), static_cast<DWORD>(utf8.size()), &written,
+              nullptr);
+    CloseHandle(file);
+}
+
+// Mirror Windhawk log to Desktop\taskbar-reorder-log.txt when fileLogEnabled.
+// Uses InternalWh_Log_Wrapper (there is no Wh_LogW in the Windhawk API).
+#undef Wh_Log
+#ifdef WH_EDITING
+#define Wh_Log(msg, ...)                                                       \
+    do {                                                                       \
+        FileLogLine(L"%S> " msg, __FUNCTION__, ##__VA_ARGS__);                 \
+    } while (0)
+#else
+#define Wh_Log(msg, ...)                                                       \
+    do {                                                                       \
+        FileLogLine(L"%S> " msg, __FUNCTION__, ##__VA_ARGS__);                 \
+        if (InternalWh_IsLogEnabled(InternalWhModPtr)) {                       \
+            InternalWh_Log_Wrapper(L"[%d:%S]: " msg, __LINE__, __FUNCTION__,   \
+                                   ##__VA_ARGS__);                             \
+        }                                                                      \
+    } while (0)
+#endif
 
 
 // ----- auto-reorder-common.h -----
@@ -389,6 +481,9 @@ bool RunAutoReorderApplyOnTaskbarThread(
     bool fromDeferredTimer = false);
 
 void AutoReorder_UninstallTraySubclass();
+
+bool AutoReorder_HasAnyCachedOrderAtLeast(size_t n);
+extern std::atomic<int> g_triggerRetryRemaining;
 
 extern std::atomic<bool> g_pendingSessionApply;
 
@@ -1083,20 +1178,25 @@ void* WINAPI TaskGroup_Thumbnails_Hook(void* pThis, void* param1) {
             });
 
             RefreshCachedTaskGroupFromThumbnailMapping(false);
-            bool appliedPending = false;
-            if (g_cachedTaskGroupFromFlyout) {
-                if (g_pendingSessionApply.load()) {
-                    AutoReorder_QueuePendingFromEngineCache();
+            if (g_reorderingXamlThumbnails || GetCapture()) {
+                Wh_Log(L"Auto-reorder: skip pending flyout apply "
+                       L"(drag/reorder in progress)");
+            } else {
+                bool appliedPending = false;
+                if (g_cachedTaskGroupFromFlyout) {
+                    if (g_pendingSessionApply.load()) {
+                        AutoReorder_QueuePendingFromEngineCache();
+                    }
+                    appliedPending = AutoReorder_TryApplyPendingXamlFlyoutOrder(
+                        g_cachedTaskGroupFromFlyout);
+                    if (appliedPending) {
+                        CancelDeferredAutoReorderApply();
+                        g_pendingSessionApply = false;
+                    }
                 }
-                appliedPending = AutoReorder_TryApplyPendingXamlFlyoutOrder(
-                    g_cachedTaskGroupFromFlyout);
-                if (appliedPending) {
-                    CancelDeferredAutoReorderApply();
-                    g_pendingSessionApply = false;
+                if (!appliedPending) {
+                    AutoReorder_OnFlyoutMappingRefreshed();
                 }
-            }
-            if (!appliedPending) {
-                AutoReorder_OnFlyoutMappingRefreshed();
             }
         }
     }
@@ -1622,6 +1722,10 @@ int WINAPI TaskItemThumbnailList_OnPointerMoved_Hook(void* pThis, void* pArgs) {
 
     if (indexPressed != -1 && indexHovered != -1 &&
         indexPressed != indexHovered) {
+        g_pendingSessionApply = false;
+        g_pendingXamlFlyoutOrder.clear();
+        g_triggerRetryRemaining = 0;
+        Wh_Log(L"manual drag, cancel pending");
         g_reorderingXamlThumbnails = true;
         MoveItemsFromXAMLThumbnail(indexPressed, indexHovered);
     }
@@ -2077,6 +2181,7 @@ HMODULE WINAPI LoadLibraryExW_Hook(LPCWSTR lpLibFileName,
 }
 
 void LoadSettings() {
+    g_fileLogEnabled = Wh_GetIntSetting(L"fileLogEnabled") != 0;
     g_settings.oldTaskbarOnWin11 = Wh_GetIntSetting(L"oldTaskbarOnWin11");
     g_settings.autoReorderOnModLoad =
         Wh_GetIntSetting(L"autoReorderOnModLoad") != 0;
@@ -2153,16 +2258,58 @@ constexpr wchar_t kReorderTriggerWindowClass[] =
     L"WindhawkThumbnailReorderTrigger";
 constexpr wchar_t kReorderTriggerRegisteredMessageName[] =
     L"Windhawk.TaskbarThumbnailReorder.Trigger";
+constexpr UINT kReorderTriggerRunMsg = WM_APP + 1;
+constexpr LRESULT kReorderTriggerAck = 0x574841;
 
 std::atomic<bool> g_reorderListenerThreadStop{false};
 HANDLE g_reorderListenerThread = nullptr;
 DWORD g_reorderListenerThreadId = 0;
 UINT g_reorderTriggerRegisteredMessage = 0;
 HWND g_reorderTriggerHwnd = nullptr;
+HANDLE g_triggerRetryTimer = nullptr;
+std::atomic<int> g_triggerRetryRemaining{0};
+
+void CancelTriggerRetryTimer() {
+    HANDLE timer = g_triggerRetryTimer;
+    if (!timer) {
+        return;
+    }
+
+    g_triggerRetryTimer = nullptr;
+    if (!DeleteTimerQueueTimer(nullptr, timer, INVALID_HANDLE_VALUE)) {
+        Wh_Log(L"Auto-reorder: DeleteTimerQueueTimer (retry) failed (%u)",
+               GetLastError());
+    }
+}
+
+void RunTriggerPassWithRetry() {
+    RunAutoReorderTestPass();
+    if (AutoReorder_HasAnyCachedOrderAtLeast(2)) {
+        g_triggerRetryRemaining = 0;
+        Wh_Log(L"order cached");
+        return;
+    }
+
+    int left = g_triggerRetryRemaining.fetch_sub(1) - 1;
+    if (left < 0) {
+        Wh_Log(L"retries exhausted");
+        return;
+    }
+
+    Wh_Log(L"retry (%d left)", left);
+    CreateTimerQueueTimer(
+        &g_triggerRetryTimer, nullptr,
+        [](PVOID, BOOLEAN) {
+            g_triggerRetryTimer = nullptr;
+            RunTriggerPassWithRetry();
+        },
+        nullptr, 5000, 0, WT_EXECUTEONLYONCE);
+}
 
 void HandleManualReorderTrigger(const wchar_t* source) {
     Wh_Log(L"Auto-reorder: trigger from %s", source);
-    RunAutoReorderTestPass();
+    g_triggerRetryRemaining = 6;
+    RunTriggerPassWithRetry();
 }
 
 LRESULT CALLBACK ReorderTriggerWndProc(HWND hwnd,
@@ -2171,6 +2318,12 @@ LRESULT CALLBACK ReorderTriggerWndProc(HWND hwnd,
                                      LPARAM lParam) {
     if (g_reorderTriggerRegisteredMessage != 0 &&
         msg == g_reorderTriggerRegisteredMessage) {
+        Wh_Log(L"trigger msg received");
+        PostMessageW(hwnd, kReorderTriggerRunMsg, 0, 0);
+        return kReorderTriggerAck;
+    }
+
+    if (msg == kReorderTriggerRunMsg) {
         HandleManualReorderTrigger(L"PostMessage");
         return 0;
     }
@@ -3635,6 +3788,16 @@ void AutoReorder_ClearCachedDesktopOrders() {
     g_cachedDesktopOrders.clear();
 }
 
+bool AutoReorder_HasAnyCachedOrderAtLeast(size_t n) {
+    std::lock_guard<std::mutex> lock(g_cachedDesktopOrdersMutex);
+    for (const auto& entry : g_cachedDesktopOrders) {
+        if (entry.hwndOrder.size() >= n) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void AutoReorder_StoreCachedDesktopOrder(const std::wstring& appExe,
                                          const GUID& desktopId,
                                          std::vector<HWND> hwndOrder) {
@@ -5066,6 +5229,7 @@ BOOL Wh_ModInit() {
     Wh_Log(L">");
 
     LoadSettings();
+    Wh_Log(L"=== mod load ===");
 
     g_winVersion = GetExplorerVersion();
     if (g_winVersion == WinVersion::Unsupported) {
@@ -5156,7 +5320,9 @@ void Wh_ModAfterInit() {
 
 void Wh_ModUninit() {
     Wh_Log(L">");
+    Wh_Log(L"=== mod unload ===");
 
+    CancelTriggerRetryTimer();
     CancelAutoReorderTimer();
     CancelDeferredApplyTimer();
     AutoReorder_UninstallTraySubclass();

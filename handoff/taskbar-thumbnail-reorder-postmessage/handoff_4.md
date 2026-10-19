@@ -22,7 +22,7 @@
 | # | File |
 |---|------|
 | 1 | This brief (`handoff_4.md`) |
-| 2 | [`taskbar-reorder-log-1.3.18.txt`](taskbar-reorder-log-1.3.18.txt) — **primary** session log for this report |
+| 2 | [`new log/taskbar-reorder-log.txt`](new%20log/taskbar-reorder-log.txt) — **primary** session log (same content as `taskbar-reorder-log-1.3.18.txt`) |
 | 3 | [`taskbar-thumbnail-reorder-fork.wh.cpp`](taskbar-thumbnail-reorder-fork.wh.cpp) — **v1.3.18** source under test |
 | 4 | [`mod_settings.json`](mod_settings.json) |
 | 5 | [`ahk_startup_trigger.ahk`](ahk_startup_trigger.ahk) |
@@ -35,7 +35,8 @@ GitHub:
 
 - Folder: https://github.com/codychen98/windhawk-mods/tree/main/handoff/taskbar-thumbnail-reorder-postmessage  
 - This brief: https://github.com/codychen98/windhawk-mods/blob/main/handoff/taskbar-thumbnail-reorder-postmessage/handoff_4.md  
-- Primary log: https://github.com/codychen98/windhawk-mods/blob/main/handoff/taskbar-thumbnail-reorder-postmessage/taskbar-reorder-log-1.3.18.txt  
+- Primary log: https://github.com/codychen98/windhawk-mods/blob/main/handoff/taskbar-thumbnail-reorder-postmessage/new%20log/taskbar-reorder-log.txt  
+- Mirror (no spaces in path): https://github.com/codychen98/windhawk-mods/blob/main/handoff/taskbar-thumbnail-reorder-postmessage/taskbar-reorder-log-1.3.18.txt  
 
 **First reply:** confirm local clone path; confirm no-push; list each required file as read; then investigate. Do not invent file contents.
 
@@ -60,11 +61,11 @@ From [`mod_settings.json`](mod_settings.json):
 - App rules: `floorp.exe` with YouTube=1 … Aliexpress=7  
 
 Mod under test: **`@version` 1.3.18** in [`taskbar-thumbnail-reorder-fork.wh.cpp`](taskbar-thumbnail-reorder-fork.wh.cpp).  
-Desktop file logging was used for [`taskbar-reorder-log-1.3.18.txt`](taskbar-reorder-log-1.3.18.txt).
+Desktop file logging was used; the session copy is [`new log/taskbar-reorder-log.txt`](new%20log/taskbar-reorder-log.txt).
 
 ---
 
-## Observed facts from `taskbar-reorder-log-1.3.18.txt`
+## Observed facts from `new log/taskbar-reorder-log.txt`
 
 (Log contains HWND pointers and tab **counts**; no tab title strings.)
 
@@ -112,7 +113,7 @@ Desktop file logging was used for [`taskbar-reorder-log-1.3.18.txt`](taskbar-reo
 ## Context the user already has from prior rounds (history, not conclusions)
 
 - Earlier handoffs addressed PostMessage delivery (ack/retry) and partial flyout vs 7-window engine order; 1.3.18 added a “partial coverage → ApplyOrderToTaskGroup(..., false)” path per [`handoff_3.md`](handoff_3.md).
-- Primary evidence for **this** report is [`taskbar-reorder-log-1.3.18.txt`](taskbar-reorder-log-1.3.18.txt).
+- Primary evidence for **this** report is [`new log/taskbar-reorder-log.txt`](new%20log/taskbar-reorder-log.txt).
 
 ---
 

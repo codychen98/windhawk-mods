@@ -1,16 +1,28 @@
 // ==WindhawkMod==
-// @id              taskbar-thumbnail-reorder
-// @name            Taskbar Thumbnail Reorder
-// @description     Reorder taskbar thumbnails with the left mouse button
-// @version         1.1.5
+// @id              taskbar-thumbnail-reorder-fork
+// @name            Taskbar Thumbnail Reorder - Fork
+// @description     Reorder taskbar thumbnails manually; optional one-shot auto-reorder from JSON rules on mod load
+// @version         1.3.19
 // @author          m417z
 // @github          https://github.com/m417z
 // @twitter         https://twitter.com/m417z
 // @homepage        https://m417z.com/
 // @include         explorer.exe
 // @architecture    x86-64
-// @compilerOptions -lcomctl32 -lole32 -loleaut32 -lruntimeobject -lversion
+// @compilerOptions -lcomctl32 -lole32 -loleaut32 -lruntimeobject -lversion -lUIAutomationCore
 // ==/WindhawkMod==
+
+// WINDHAWK: Paste this ENTIRE file into the mod editor (mod.wh.cpp).
+// Do not use taskbar-thumbnail-reorder.wh.cpp or auto-reorder-*.cpp separately;
+// Windhawk only supports a single source file.
+
+
+
+
+
+
+
+
 
 // Source code is published under The GNU General Public License v3.0.
 //
@@ -24,12 +36,129 @@
 /*
 # Taskbar Thumbnail Reorder
 
-Reorder taskbar thumbnails with the left mouse button.
+Reorder taskbar thumbnails with the left mouse button. You can also configure a
+**one-shot automatic reorder** when the mod loads in Explorer (once per Explorer
+session).
 
 Only Windows 10 64-bit and Windows 11 are supported. For older Windows versions
 check out [7+ Taskbar Tweaker](https://tweaker.ramensoftware.com/).
 
 ![demonstration](https://i.imgur.com/wGGe2RS.gif)
+
+## Manual reorder
+
+Drag thumbnails in the taskbar flyout with the left mouse button. This works
+before and after an automatic reorder pass.
+
+## Automatic reorder (optional)
+
+Enable **Auto-reorder when mod loads**, set **Delay before reorder (seconds)**
+(e.g. `5` to wait five seconds after the mod initializes), and paste JSON rules
+into **Reorder rules (JSON)**.
+
+On each Explorer session:
+
+1. Windhawk injects the mod into `explorer.exe`.
+2. After the delay, the mod runs **one** reorder pass (not on every flyout open).
+3. The pass scans **all virtual desktops**, finds target app windows on each
+   desktop, reads tab titles (UI Automation), applies your rules, and reorders
+   taskbar thumbnails **on that desktop only** (windows are not moved between
+   desktops).
+
+Changing settings later in the same Explorer session **reloads** the JSON but
+does **not** run auto-reorder again until Explorer or the mod is restarted.
+
+### Example JSON (schema version 1)
+
+Copy this into **Reorder rules (JSON)** and adjust strings for your tabs/folders:
+
+```json
+{
+  "version": 1,
+  "autoReorderOnModLoad": true,
+  "delayAfterModReadySeconds": 5,
+  "apps": [
+    {
+      "app": "firefox.exe",
+      "matches": [
+        { "strings": ["gmail", "onenote"], "position": 1 },
+        { "strings": ["adidas"], "position": 2 }
+      ]
+    },
+    {
+      "app": "explorer.exe",
+      "matches": [
+        { "strings": ["Projects"], "position": 1 },
+        { "strings": ["Downloads"], "position": 2 }
+      ]
+    }
+  ]
+}
+```
+
+`explorer.exe` here means **File Explorer folder windows**, not the Windows
+shell process hosting the taskbar.
+
+### Rule matching
+
+| Topic | Behavior |
+|-------|----------|
+| `strings` in one rule | **All** strings must appear on **some tab** in the **same** window (partial, case-insensitive). `["gmail","onenote"]` does not match a window with only a gmail tab. |
+| Rule order | Rules are sorted by `position` (priority), then tried in that order. |
+| Each matched rule | Takes the **next** flyout slot (1, then 2, then 3, …) on that desktop. |
+| Unmatched rule | **Skipped** — no empty slot; the next matched rule uses the next number. |
+| One window matches several rules | **First matching rule wins** only. |
+| Two windows match the same rule | The **first unassigned** window gets that slot; the other goes to the **tail**. |
+| Unmatched windows | Keep **relative order** after all matched windows. |
+
+Thumbnails are **one per top-level window**; Firefox "tabs" in rules refer to tabs **inside** that window (enumerated via UI Automation), not separate thumbnails.
+
+### Virtual desktops
+
+Order is computed **per virtual desktop**. The pass includes windows on desktops you
+are not currently viewing. Thumbnail positions are relative to the flyout on each
+desktop, not one global order across the PC.
+
+### Import / export
+
+Save your JSON to a file for backup or another PC. Paste the same document into
+**Reorder rules (JSON)** on another machine; enable auto-reorder and use a similar
+delay so restored windows have time to open.
+
+Invalid JSON disables auto-reorder for that session and logs an error (DebugView /
+Windhawk log); Explorer is not affected.
+
+### Limitations
+
+- Auto-reorder runs **once** after mod load + delay. Apps that open **much later**
+  (e.g. Firefox long after login) are not reordered until Explorer/mod reload.
+- Increase the delay if session restore needs more than a few seconds (try 10–15).
+- Tab detection depends on UI Automation (Firefox / File Explorer UI); selectors
+  may need updates after browser or Windows updates.
+- Rules use **executable names** (`firefox.exe`), not window titles alone.
+- UI Automation is capped at about **2 seconds per window**; slow targets log a
+  timeout and fall back to the window title.
+- With **ExplorerPatcher** or the old Windows 11 taskbar option enabled, use the
+  same **Customize the old taskbar on Windows 11** setting as for manual reorder.
+
+### Test without restart
+
+Enable **Hotkey trigger** and press **F1** (default) to run reorder immediately.
+Enable **Enable logging** and **Show log output** to see tab titles and apply
+results. F1 does nothing when the hotkey trigger is disabled.
+
+### External trigger (AutoHotkey, scripts)
+
+When **PostMessage trigger** is enabled, the mod creates a hidden window
+(class/title `WindhawkThumbnailReorderTrigger`). Post
+`RegisterWindowMessage("Windhawk.TaskbarThumbnailReorder.Trigger")` to that HWND
+to run the same pass as F1 (hotkey can be off). See setting description for an
+AutoHotkey 1.1 example.
+
+Use **one search string per rule** when each site is in its own Floorp/Firefox
+window (e.g. `"YouTube"` alone, not `"YouTube"` + `"Gmail"` in one rule).
+Multiple strings in one rule mean **all** must appear on tabs in the **same**
+window.
 */
 // ==/WindhawkModReadme==
 
@@ -40,21 +169,327 @@ check out [7+ Taskbar Tweaker](https://tweaker.ramensoftware.com/).
   $description: >-
     Enable this option to customize the old taskbar on Windows 11 (if using
     ExplorerPatcher or a similar tool).
+- autoReorderOnModLoad: false
+  $name: Auto-reorder when mod loads
+  $description: >-
+    Run one automatic thumbnail reorder pass per Explorer session after the
+    delay below. Does not run again if you change settings until Explorer or
+    the mod restarts (rules are re-parsed, but the pass is not repeated).
+- delayAfterModReadySeconds: 5
+  $name: Delay before reorder (seconds)
+  $description: >-
+    Wait this many seconds after the mod loads in Explorer before reordering
+    (0-120). Gives Firefox, File Explorer, and session restore time to open
+    windows. Also used when JSON omits delayAfterModReadySeconds.
+- rulesJson: ""
+  $name: Reorder rules (JSON)
+  $description: >-
+    Schema version 1 JSON for target apps and match rules. In Visual mode, paste
+    JSON in this field only (multiline is OK). In Textual mode, put the whole
+    JSON on one quoted line. Do not use YAML pipe blocks. Invalid JSON disables
+    auto-reorder and logs an error. Example (copy and edit):
+
+    {"version":1,"autoReorderOnModLoad":true,"delayAfterModReadySeconds":5,"apps":[{"app":"firefox.exe","matches":[{"strings":["gmail","onenote"],"position":1},{"strings":["adidas"],"position":2}]},{"app":"explorer.exe","matches":[{"strings":["Projects"],"position":1},{"strings":["Downloads"],"position":2}]}]}
+
+    See the mod readme for matching semantics (AND strings per rule, first rule
+    wins, per virtual desktop, File Explorer vs shell explorer.exe).
+- hotkeyEnabled: true
+  $name: Hotkey trigger enabled
+  $description: >-
+    When enabled, press F1 (or the virtual-key below) to run reorder with the
+    current JSON. When disabled, the hotkey does nothing.
+- hotkeyVirtualKey: 112
+  $name: Hotkey virtual-key code
+  $description: >-
+    Windows virtual-key code (VK). 112 = F1, 113 = F2, 114 = F3, 115 = F4.
+    Change only if F1 conflicts with another app.
+- externalPostMessageTriggerEnabled: true
+  $name: PostMessage trigger enabled
+  $description: >-
+    Listen for RegisterWindowMessage("Windhawk.TaskbarThumbnailReorder.Trigger")
+    on a hidden window (class WindhawkThumbnailReorderTrigger). Works when the
+    hotkey is disabled. AutoHotkey 1.1: triggerMsg := DllCall(
+    "RegisterWindowMessage", "Str", "Windhawk.TaskbarThumbnailReorder.Trigger");
+    PostMessage, %triggerMsg%, 0, 0,, ahk_class WindhawkThumbnailReorderTrigger
+- fileLogEnabled: false
+  $name: Desktop file log
+  $description: >-
+    When enabled, append the same diagnostic lines to
+    Desktop\taskbar-reorder-log.txt (in addition to the Windhawk log). Useful
+    when verifying PostMessage delivery and reorder retries after login.
 */
 // ==/WindhawkModSettings==
 
 #include <windhawk_utils.h>
 
+
 #include <commctrl.h>
 #include <psapi.h>
 
+#include <algorithm>
 #include <atomic>
 #include <cmath>
+#include <cstdarg>
 #include <functional>
+#include <mutex>
 #include <optional>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #undef GetCurrentTime
+
+std::atomic<bool> g_fileLogEnabled{false};
+std::atomic<DWORD> g_xamlTaskbarThreadId{0};
+
+void FileLogLine(PCWSTR fmt, ...) {
+    if (!g_fileLogEnabled.load()) {
+        return;
+    }
+
+    static std::mutex fileLogMutex;
+    std::lock_guard<std::mutex> lock(fileLogMutex);
+
+    // Resolve Desktop without shlobj.h — that header defines
+    // IVirtualDesktopManager and conflicts with this fork's local MIDL iface.
+    static std::wstring logPath;
+    if (logPath.empty()) {
+        wchar_t userProfile[MAX_PATH];
+        const DWORD n =
+            GetEnvironmentVariableW(L"USERPROFILE", userProfile, MAX_PATH);
+        if (n == 0 || n >= MAX_PATH) {
+            return;
+        }
+        logPath = userProfile;
+        logPath += L"\\Desktop\\taskbar-reorder-log.txt";
+    }
+
+    SYSTEMTIME st{};
+    GetLocalTime(&st);
+
+    wchar_t prefix[64];
+    swprintf_s(prefix, L"%02u:%02u:%02u.%03u [tid=%lu] ", st.wHour, st.wMinute,
+               st.wSecond, st.wMilliseconds, GetCurrentThreadId());
+
+    wchar_t body[2048];
+    va_list args;
+    va_start(args, fmt);
+    _vsnwprintf_s(body, _TRUNCATE, fmt, args);
+    va_end(args);
+
+    std::wstring line = prefix;
+    line += body;
+
+    int bytes = WideCharToMultiByte(CP_UTF8, 0, line.c_str(), -1, nullptr, 0,
+                                    nullptr, nullptr);
+    if (bytes <= 1) {
+        return;
+    }
+
+    std::string utf8(static_cast<size_t>(bytes - 1), '\0');
+    WideCharToMultiByte(CP_UTF8, 0, line.c_str(), -1, utf8.data(), bytes,
+                        nullptr, nullptr);
+    utf8 += "\r\n";
+
+    HANDLE file =
+        CreateFileW(logPath.c_str(), FILE_APPEND_DATA, FILE_SHARE_READ, nullptr,
+                    OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (file == INVALID_HANDLE_VALUE) {
+        return;
+    }
+
+    DWORD written = 0;
+    WriteFile(file, utf8.data(), static_cast<DWORD>(utf8.size()), &written,
+              nullptr);
+    CloseHandle(file);
+}
+
+// Mirror Windhawk log to Desktop\taskbar-reorder-log.txt when fileLogEnabled.
+// Uses InternalWh_Log_Wrapper (there is no Wh_LogW in the Windhawk API).
+#undef Wh_Log
+#ifdef WH_EDITING
+#define Wh_Log(msg, ...)                                                       \
+    do {                                                                       \
+        FileLogLine(L"%S> " msg, __FUNCTION__, ##__VA_ARGS__);                 \
+    } while (0)
+#else
+#define Wh_Log(msg, ...)                                                       \
+    do {                                                                       \
+        FileLogLine(L"%S> " msg, __FUNCTION__, ##__VA_ARGS__);                 \
+        if (InternalWh_IsLogEnabled(InternalWhModPtr)) {                       \
+            InternalWh_Log_Wrapper(L"[%d:%S]: " msg, __LINE__, __FUNCTION__,   \
+                                   ##__VA_ARGS__);                             \
+        }                                                                      \
+    } while (0)
+#endif
+
+
+// ----- auto-reorder-common.h -----
+#include <cwctype>
+#include <string>
+#include <string_view>
+
+namespace AutoReorderCommon {
+
+inline bool EqualsIgnoreCase(std::wstring_view a, std::wstring_view b) {
+    if (a.size() != b.size()) {
+        return false;
+    }
+    for (size_t i = 0; i < a.size(); ++i) {
+        if (towlower(a[i]) != towlower(b[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+inline std::wstring ToLowerCopy(std::wstring s) {
+    for (wchar_t& c : s) {
+        c = static_cast<wchar_t>(towlower(c));
+    }
+    return s;
+}
+
+}  // namespace AutoReorderCommon
+
+// ----- auto-reorder-rules.h -----
+#include <string>
+#include <vector>
+
+struct AutoReorderMatchRule {
+    std::vector<std::wstring> strings;
+    int position = 0;
+};
+
+struct AutoReorderAppRules {
+    std::wstring app;
+    std::vector<AutoReorderMatchRule> matches;
+};
+
+struct AutoReorderRules {
+    int version = 0;
+    bool autoReorderOnModLoad = false;
+    int delayAfterModReadySeconds = 5;
+    std::vector<AutoReorderAppRules> apps;
+};
+
+// Parses rulesJson when non-empty; merges UI scalars when JSON omits them.
+// Sets validOut false on parse/validation failure (fail-safe: no auto-reorder).
+void AutoReorderRules_LoadFromSettings(bool uiAutoReorderOnModLoad,
+                                       int uiDelaySeconds,
+                                       PCWSTR rulesJsonText,
+                                       AutoReorderRules& out,
+                                       bool& validOut,
+                                       std::wstring& errorOut);
+
+// ----- auto-reorder-enumeration.h -----
+
+#include <guiddef.h>
+#include <vector>
+
+// Collects distinct virtual desktop IDs from top-level windows.
+std::vector<GUID> EnumerateVirtualDesktops();
+
+// Top-level HWNDs for the given executable on the given virtual desktop.
+std::vector<HWND> GetWindowsForAppOnDesktop(const std::wstring& appExe,
+                                            const GUID& desktopId);
+
+// Logs per-desktop window counts for each configured app rule.
+void AutoReorder_LogEnumeratedTargets(
+    const std::vector<AutoReorderAppRules>& appRules);
+
+bool GetWindowVirtualDesktopIdForHwnd(HWND hwnd, GUID& desktopIdOut);
+
+void AutoReorderEnumeration_Uninit();
+
+// ----- auto-reorder-uia.h -----
+
+#include <string>
+#include <vector>
+
+// Tab titles via UI Automation; window title as single-element fallback.
+std::vector<std::wstring> GetTabTitlesForWindow(HWND hwnd);
+
+bool AutoReorder_ContainsSubstringIgnoreCase(std::wstring_view haystack,
+                                             std::wstring_view needle);
+
+// Every required string must appear as a case-insensitive substring of some tab
+// title in the same window.
+bool AutoReorder_TabTitlesContainAllStrings(
+    const std::vector<std::wstring>& tabTitles,
+    const std::vector<std::wstring>& requiredStrings);
+
+void AutoReorder_LogTabTitlesForTargets(
+    const std::vector<AutoReorderAppRules>& appRules);
+
+void AutoReorderUia_Uninit();
+
+// ----- auto-reorder-engine.h -----
+
+#include <windows.h>
+
+#include <vector>
+
+struct WindowWithTabTitles {
+    HWND hwnd = nullptr;
+    std::vector<std::wstring> tabTitles;
+};
+
+// Greedy rule assignment: rules sorted by `position` (priority). Each matched
+// rule takes the next flyout slot (1, 2, 3, ...); unmatched rules are skipped
+// with no gap. One window per rule; first-rule-wins; tail keeps stable order.
+std::vector<HWND> ComputeOrder(
+    const std::vector<WindowWithTabTitles>& windows,
+    const std::vector<AutoReorderMatchRule>& matches);
+
+void AutoReorder_ComputeAndLogOrders(
+    const std::vector<AutoReorderAppRules>& appRules);
+
+// Logs the manual test matrix from the implementation plan (synthetic tab data).
+void AutoReorder_RunEngineSelfTestLog();
+
+// ----- auto-reorder-trace.h / auto-reorder-trace.cpp -----
+
+void AutoReorder_TraceStep(const wchar_t* stepIdAndMessage) {
+    Wh_Log(L"Auto-reorder TRACE [tid=%u] %s", GetCurrentThreadId(),
+           stepIdAndMessage);
+}
+
+void AutoReorder_TraceStepU(const wchar_t* stepIdAndMessage, ULONG_PTR val) {
+    Wh_Log(L"Auto-reorder TRACE [tid=%u] %s val=0x%zx",
+           GetCurrentThreadId(), stepIdAndMessage, val);
+}
+
+void AutoReorder_TraceStep2U(const wchar_t* stepIdAndMessage, ULONG_PTR valA,
+                             size_t valB) {
+    Wh_Log(L"Auto-reorder TRACE [tid=%u] %s a=0x%zx b=%zu",
+           GetCurrentThreadId(), stepIdAndMessage, valA, valB);
+}
+
+// ----- auto-reorder-apply.h -----
+
+void* FindTaskGroupViaThumbnailMapping(const std::vector<HWND>& targetHwnds);
+
+bool AutoReorder_ApplyReorders(
+    const std::vector<AutoReorderAppRules>& appRules,
+    bool flyoutOnlyApply = true);
+
+bool AutoReorder_ApplyFlyoutOnlyFromCache(
+    const std::vector<AutoReorderAppRules>& appRules);
+
+bool RunAutoReorderApplyOnTaskbarThread(
+    const std::vector<AutoReorderAppRules>& appRules,
+    bool fromDeferredTimer = false);
+
+void AutoReorder_UninstallTraySubclass();
+
+bool AutoReorder_HasAnyCachedOrderAtLeast(size_t n);
+extern std::atomic<int> g_triggerRetryRemaining;
+
+extern std::atomic<bool> g_pendingSessionApply;
+
+#include <mutex>
 
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.UI.Input.h>
@@ -72,7 +507,20 @@ using namespace winrt::Windows::UI::Xaml;
 
 struct {
     bool oldTaskbarOnWin11;
+    bool autoReorderOnModLoad;
+    int delayAfterModReadySeconds;
+    bool hotkeyEnabled;
+    int hotkeyVirtualKey;
+    bool externalPostMessageTriggerEnabled;
 } g_settings;
+
+AutoReorderRules g_rules;
+bool g_rulesValid;
+
+std::atomic<bool> g_autoReorderDone{false};
+HANDLE g_autoReorderTimer = nullptr;
+HANDLE g_deferredApplyTimer = nullptr;
+std::atomic<bool> g_deferredApplyTimerQueued{false};
 
 enum class WinVersion {
     Unsupported,
@@ -122,7 +570,24 @@ bool g_inHoverFlyoutModel_TargetItemKey;
 winrt::weak_ref<winrt::Windows::Foundation::IInspectable>
     g_TaskGroup_Thumbnails;
 
+void* g_cachedTaskGroupFromFlyout = nullptr;
+
 bool g_reorderingXamlThumbnails;
+
+std::mutex g_autoReorderPassMutex;
+std::atomic<bool> g_autoReorderPassRunning{false};
+
+void RefreshCachedTaskGroupFromThumbnailMapping(bool notifyApply = true);
+void CancelDeferredAutoReorderApply();
+void AutoReorder_QueuePendingFromEngineCache();
+bool AutoReorder_FlyoutThumbnailsReady();
+bool TryApplyXamlFlyoutOrder(void* taskGroup,
+                             const std::vector<HWND>& targetOrder);
+void QueuePendingXamlFlyoutOrder(void* taskGroup,
+                                 const std::vector<HWND>& targetOrder);
+bool AutoReorder_TryApplyPendingXamlFlyoutOrder(void* taskGroup);
+void AutoReorder_OnFlyoutMappingRefreshed();
+bool AutoReorder_ShouldDeferApply();
 
 FrameworkElement EnumChildElements(
     FrameworkElement element,
@@ -211,6 +676,17 @@ using CTaskBtnGroup_IndexOfTaskItem_t = int(WINAPI*)(void* pThis,
                                                      void* taskItem);
 CTaskBtnGroup_IndexOfTaskItem_t CTaskBtnGroup_IndexOfTaskItem;
 
+using CTaskBtnGroup_GetGroup_t = void*(WINAPI*)(void* pThis);
+CTaskBtnGroup_GetGroup_t CTaskBtnGroup_GetGroup;
+
+using CWindowTaskItem_GetWindow_t = HWND(WINAPI*)(void* pThis);
+CWindowTaskItem_GetWindow_t CWindowTaskItem_GetWindow;
+
+using CImmersiveTaskItem_GetWindow_t = HWND(WINAPI*)(void* pThis);
+CImmersiveTaskItem_GetWindow_t CImmersiveTaskItem_GetWindow;
+
+void* CImmersiveTaskItem_vftable;
+
 using CTaskListWnd_TaskInclusionChanged_t = HRESULT(WINAPI*)(void* pThis,
                                                              void* pTaskGroup,
                                                              void* pTaskItem);
@@ -220,6 +696,7 @@ using TaskItemFilter_IsTaskAllowed_t = bool(WINAPI*)(void* pThis,
                                                      void* pTaskItem);
 TaskItemFilter_IsTaskAllowed_t TaskItemFilter_IsTaskAllowed_Original;
 bool WINAPI TaskItemFilter_IsTaskAllowed_Hook(void* pThis, void* pTaskItem) {
+    g_xamlTaskbarThreadId = GetCurrentThreadId();
     Wh_Log(L">");
 
     if (g_taskItemFilterDisallowAll) {
@@ -671,6 +1148,7 @@ void* WINAPI TaskItemThumbnail_TaskItemThumbnail_2_Hook(void* param1,
 using TaskGroup_Thumbnails_t = void*(WINAPI*)(void* pThis, void* param1);
 TaskGroup_Thumbnails_t TaskGroup_Thumbnails_Original;
 void* WINAPI TaskGroup_Thumbnails_Hook(void* pThis, void* param1) {
+    g_xamlTaskbarThreadId = GetCurrentThreadId();
     void* result = TaskGroup_Thumbnails_Original(pThis, param1);
 
     if (g_inHoverFlyoutModel_TargetItemKey) {
@@ -702,6 +1180,28 @@ void* WINAPI TaskGroup_Thumbnails_Hook(void* pThis, void* param1) {
             std::erase_if(g_thumbnailTaskItemMapping, [](const auto& item) {
                 return !item.thumbnail.get();
             });
+
+            RefreshCachedTaskGroupFromThumbnailMapping(false);
+            if (g_reorderingXamlThumbnails || GetCapture()) {
+                Wh_Log(L"Auto-reorder: skip pending flyout apply "
+                       L"(drag/reorder in progress)");
+            } else {
+                bool appliedPending = false;
+                if (g_cachedTaskGroupFromFlyout) {
+                    if (g_pendingSessionApply.load()) {
+                        AutoReorder_QueuePendingFromEngineCache();
+                    }
+                    appliedPending = AutoReorder_TryApplyPendingXamlFlyoutOrder(
+                        g_cachedTaskGroupFromFlyout);
+                    if (appliedPending) {
+                        CancelDeferredAutoReorderApply();
+                        g_pendingSessionApply = false;
+                    }
+                }
+                if (!appliedPending) {
+                    AutoReorder_OnFlyoutMappingRefreshed();
+                }
+            }
         }
     }
 
@@ -782,6 +1282,8 @@ void MoveItemsFromXAMLThumbnail(int indexFrom, int indexTo) {
     }
 
     Wh_Log(L"Moving from %d to %d", indexFrom, indexTo);
+    AutoReorder_TraceStep2U(L"T77 xaml_move:enter", static_cast<ULONG_PTR>(indexFrom),
+                            static_cast<size_t>(indexTo));
 
     auto thumbnails = g_TaskGroup_Thumbnails.get();
     if (!thumbnails) {
@@ -848,6 +1350,234 @@ void MoveItemsFromXAMLThumbnail(int indexFrom, int indexTo) {
         Wh_Log(L"Failed to move task item");
         return;
     }
+}
+
+std::unordered_map<void*, std::vector<HWND>> g_pendingXamlFlyoutOrder;
+
+HWND GetHwndFromTaskItemForXaml(void* taskItem) {
+    if (!taskItem) {
+        return nullptr;
+    }
+
+    if (CImmersiveTaskItem_vftable &&
+        *(void**)taskItem == CImmersiveTaskItem_vftable &&
+        CImmersiveTaskItem_GetWindow) {
+        return CImmersiveTaskItem_GetWindow(taskItem);
+    }
+
+    if (CWindowTaskItem_GetWindow) {
+        return CWindowTaskItem_GetWindow(taskItem);
+    }
+
+    return nullptr;
+}
+
+std::vector<HWND> GetFlyoutMappedHwndsForTaskGroup(void* taskGroup) {
+    std::vector<HWND> hwnds;
+    if (!taskGroup) {
+        return hwnds;
+    }
+
+    std::unordered_set<HWND> seen;
+    for (const ThumbnailTaskItemMapping& mapping : g_thumbnailTaskItemMapping) {
+        if (mapping.taskGroup != taskGroup || !mapping.taskItem) {
+            continue;
+        }
+
+        HWND hwnd = GetHwndFromTaskItemForXaml(mapping.taskItem);
+        if (hwnd && seen.insert(hwnd).second) {
+            hwnds.push_back(hwnd);
+        }
+    }
+
+    return hwnds;
+}
+
+bool BuildDesiredFlyoutHwndOrder(const std::vector<HWND>& currentHwnds,
+                                 const std::vector<HWND>& targetOrder,
+                                 std::vector<HWND>& desiredOut) {
+    desiredOut.clear();
+
+    for (HWND hwnd : targetOrder) {
+        bool inFlyout = false;
+        for (HWND current : currentHwnds) {
+            if (current == hwnd) {
+                inFlyout = true;
+                break;
+            }
+        }
+        if (inFlyout) {
+            desiredOut.push_back(hwnd);
+        }
+    }
+
+    for (HWND hwnd : currentHwnds) {
+        bool alreadyListed = false;
+        for (HWND listed : desiredOut) {
+            if (listed == hwnd) {
+                alreadyListed = true;
+                break;
+            }
+        }
+        if (!alreadyListed) {
+            desiredOut.push_back(hwnd);
+        }
+    }
+
+    return desiredOut.size() == currentHwnds.size();
+}
+
+bool TryApplyXamlFlyoutOrder(void* taskGroup,
+                             const std::vector<HWND>& targetOrder) {
+    AutoReorder_TraceStep2U(L"T70 xaml_apply:enter",
+                            reinterpret_cast<ULONG_PTR>(taskGroup),
+                            targetOrder.size());
+    auto thumbnails = g_TaskGroup_Thumbnails.get();
+    if (!thumbnails) {
+        AutoReorder_TraceStep(L"T70b xaml_apply:exit no_thumbnails");
+        return false;
+    }
+
+    auto* thumbnailsPtr = winrt::get_abi(thumbnails);
+    int thumbnailsSize = TaskItemThumbnail_Size_Original(&thumbnailsPtr);
+    AutoReorder_TraceStep2U(L"T71 xaml_apply:thumbnails_size", thumbnailsSize, 0);
+    if (thumbnailsSize <= 1) {
+        AutoReorder_TraceStep(L"T71b xaml_apply:exit thumbnails_not_ready");
+        return false;
+    }
+
+    std::vector<HWND> currentHwnds;
+    currentHwnds.reserve(static_cast<size_t>(thumbnailsSize));
+
+    for (int i = 0; i < thumbnailsSize; ++i) {
+        winrt::com_ptr<IUnknown> thumb;
+        TaskItemThumbnail_GetAt_Original(&thumbnailsPtr, thumb.put_void(), i);
+
+        void* taskItem = nullptr;
+        bool found = false;
+        for (const ThumbnailTaskItemMapping& mapping : g_thumbnailTaskItemMapping) {
+            auto thumbnail = mapping.thumbnail.get();
+            if (!thumbnail || mapping.taskGroup != taskGroup) {
+                continue;
+            }
+
+            if (winrt::get_abi(thumbnail) == thumb.get()) {
+                taskItem = mapping.taskItem;
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            Wh_Log(L"Auto-reorder apply: flyout preview item %d not mapped", i);
+            return false;
+        }
+
+        HWND hwnd = GetHwndFromTaskItemForXaml(taskItem);
+        if (!hwnd) {
+            Wh_Log(L"Auto-reorder apply: no HWND for flyout preview item %d", i);
+            return false;
+        }
+
+        currentHwnds.push_back(hwnd);
+    }
+
+    AutoReorder_TraceStep2U(L"T72 xaml_apply:mapped_current", currentHwnds.size(), 0);
+
+    std::vector<HWND> desiredHwnds;
+    if (!BuildDesiredFlyoutHwndOrder(currentHwnds, targetOrder, desiredHwnds)) {
+        AutoReorder_TraceStep(L"T72b xaml_apply:exit build_desired_failed");
+        return false;
+    }
+
+    AutoReorder_TraceStep(L"T73 xaml_apply:built_desired");
+
+    bool alreadyCorrect = true;
+    for (size_t i = 0; i < desiredHwnds.size(); ++i) {
+        if (desiredHwnds[i] != currentHwnds[i]) {
+            alreadyCorrect = false;
+            break;
+        }
+    }
+
+    if (alreadyCorrect) {
+        Wh_Log(L"Auto-reorder apply: flyout preview order already correct (%d "
+               L"item(s))",
+               thumbnailsSize);
+        return true;
+    }
+
+    AutoReorder_TraceStep(L"T74 xaml_apply:before_move_loop");
+    g_reorderingXamlThumbnails = true;
+    for (size_t targetPos = 0; targetPos < desiredHwnds.size(); ++targetPos) {
+        const HWND want = desiredHwnds[targetPos];
+        int currentIdx = -1;
+        for (size_t i = 0; i < currentHwnds.size(); ++i) {
+            if (currentHwnds[i] == want) {
+                currentIdx = static_cast<int>(i);
+                break;
+            }
+        }
+
+        if (currentIdx < 0) {
+            g_reorderingXamlThumbnails = false;
+            return false;
+        }
+
+        while (currentIdx != static_cast<int>(targetPos)) {
+            const int step = currentIdx < static_cast<int>(targetPos)
+                                 ? currentIdx + 1
+                                 : currentIdx - 1;
+            MoveItemsFromXAMLThumbnail(currentIdx, step);
+            std::swap(currentHwnds[static_cast<size_t>(currentIdx)],
+                      currentHwnds[static_cast<size_t>(step)]);
+            currentIdx = step;
+        }
+    }
+    g_reorderingXamlThumbnails = false;
+
+    Wh_Log(L"Auto-reorder apply: updated Win11 flyout preview (%d item(s))",
+           thumbnailsSize);
+    AutoReorder_TraceStep(L"T76 xaml_apply:exit ok");
+    return true;
+}
+
+void QueuePendingXamlFlyoutOrder(void* taskGroup,
+                                 const std::vector<HWND>& targetOrder) {
+    if (!taskGroup || targetOrder.size() <= 1) {
+        return;
+    }
+
+    g_pendingXamlFlyoutOrder[taskGroup] = targetOrder;
+    Wh_Log(L"Auto-reorder apply: flyout preview was closed; reorder queued for "
+           L"task group %p (%zu window(s); hover the taskbar button to apply)",
+           taskGroup, targetOrder.size());
+}
+
+bool AutoReorder_TryApplyPendingXamlFlyoutOrder(void* taskGroup) {
+    AutoReorder_TraceStepU(L"T78 try_pending:enter",
+                           reinterpret_cast<ULONG_PTR>(taskGroup));
+    auto it = g_pendingXamlFlyoutOrder.find(taskGroup);
+    if (it == g_pendingXamlFlyoutOrder.end()) {
+        AutoReorder_TraceStep(L"T78b try_pending:exit not_queued");
+        return false;
+    }
+
+    const std::vector<HWND> order = it->second;
+
+    AutoReorder_TraceStep(L"T79 try_pending:before_try_xaml");
+    if (TryApplyXamlFlyoutOrder(taskGroup, order)) {
+        g_pendingXamlFlyoutOrder.erase(it);
+        Wh_Log(L"Auto-reorder apply: applied queued flyout preview reorder "
+               L"(%zu window(s))",
+               order.size());
+        return true;
+    }
+
+    Wh_Log(L"Auto-reorder apply: queued flyout reorder not ready yet (%zu "
+           L"window(s); will retry on next hover)",
+           order.size());
+    return false;
 }
 
 using TaskItemThumbnailList_OnPointerMoved_t = int(WINAPI*)(void* pThis,
@@ -996,6 +1726,10 @@ int WINAPI TaskItemThumbnailList_OnPointerMoved_Hook(void* pThis, void* pArgs) {
 
     if (indexPressed != -1 && indexHovered != -1 &&
         indexPressed != indexHovered) {
+        g_pendingSessionApply = false;
+        g_pendingXamlFlyoutOrder.clear();
+        g_triggerRetryRemaining = 0;
+        Wh_Log(L"manual drag, cancel pending");
         g_reorderingXamlThumbnails = true;
         MoveItemsFromXAMLThumbnail(indexPressed, indexHovered);
     }
@@ -1102,6 +1836,22 @@ bool HookTaskbarSymbols() {
             {
                 {LR"(public: virtual int __cdecl CTaskBtnGroup::IndexOfTaskItem(struct ITaskItem *))"},
                 &CTaskBtnGroup_IndexOfTaskItem,
+            },
+            {
+                {LR"(public: virtual struct ITaskGroup * __cdecl CTaskBtnGroup::GetGroup(void))"},
+                &CTaskBtnGroup_GetGroup,
+            },
+            {
+                {LR"(public: virtual struct HWND__ * __cdecl CWindowTaskItem::GetWindow(void))"},
+                &CWindowTaskItem_GetWindow,
+            },
+            {
+                {LR"(public: virtual struct HWND__ * __cdecl CImmersiveTaskItem::GetWindow(void))"},
+                &CImmersiveTaskItem_GetWindow,
+            },
+            {
+                {LR"(const CImmersiveTaskItem::`vftable')"},
+                &CImmersiveTaskItem_vftable,
             },
             {
                 {LR"(public: virtual long __cdecl CTaskListWnd::TaskInclusionChanged(struct ITaskGroup *,struct ITaskItem *))"},
@@ -1326,6 +2076,13 @@ bool HookExplorerPatcherSymbols(HMODULE explorerPatcherModule) {
          &CTaskBtnGroup_GetGroupType},
         {R"(?IndexOfTaskItem@CTaskBtnGroup@@UEAAHPEAUITaskItem@@@Z)",
          &CTaskBtnGroup_IndexOfTaskItem},
+        {R"(?GetGroup@CTaskBtnGroup@@UEAAPEAUITaskGroup@@XZ)",
+         &CTaskBtnGroup_GetGroup},
+        {R"(?GetWindow@CWindowTaskItem@@UEAAPEAUHWND__@@XZ)",
+         &CWindowTaskItem_GetWindow},
+        {R"(?GetWindow@CImmersiveTaskItem@@UEAAPEAUHWND__@@XZ)",
+         &CImmersiveTaskItem_GetWindow},
+        {R"(??_7CImmersiveTaskItem@@6B@)", &CImmersiveTaskItem_vftable},
         {R"(?TaskInclusionChanged@CTaskListWnd@@UEAAJPEAUITaskGroup@@PEAUITaskItem@@@Z)",
          &CTaskListWnd_TaskInclusionChanged},
         {R"(?IsTaskAllowed@TaskItemFilter@@UEAA_NPEAUITaskItem@@@Z)",
@@ -1428,8 +2185,3110 @@ HMODULE WINAPI LoadLibraryExW_Hook(LPCWSTR lpLibFileName,
 }
 
 void LoadSettings() {
+    g_fileLogEnabled = Wh_GetIntSetting(L"fileLogEnabled") != 0;
     g_settings.oldTaskbarOnWin11 = Wh_GetIntSetting(L"oldTaskbarOnWin11");
+    g_settings.autoReorderOnModLoad =
+        Wh_GetIntSetting(L"autoReorderOnModLoad") != 0;
+    g_settings.delayAfterModReadySeconds =
+        Wh_GetIntSetting(L"delayAfterModReadySeconds");
+    g_settings.hotkeyEnabled = Wh_GetIntSetting(L"hotkeyEnabled") != 0;
+    g_settings.externalPostMessageTriggerEnabled =
+        Wh_GetIntSetting(L"externalPostMessageTriggerEnabled") != 0;
+    g_settings.hotkeyVirtualKey = Wh_GetIntSetting(L"hotkeyVirtualKey");
+    if (g_settings.hotkeyVirtualKey < 1) {
+        g_settings.hotkeyVirtualKey = VK_F1;
+    }
+
+    PCWSTR rulesJson = Wh_GetStringSetting(L"rulesJson");
+    std::wstring parseError;
+    AutoReorderRules_LoadFromSettings(
+        g_settings.autoReorderOnModLoad,
+        g_settings.delayAfterModReadySeconds, rulesJson, g_rules, g_rulesValid,
+        parseError);
+    Wh_FreeStringSetting(rulesJson);
+
+    if (!g_rulesValid) {
+        Wh_Log(L"Auto-reorder rules invalid, auto-reorder disabled: %s",
+               parseError.c_str());
+        g_settings.autoReorderOnModLoad = false;
+        return;
+    }
+
+    g_settings.autoReorderOnModLoad = g_rules.autoReorderOnModLoad;
+    g_settings.delayAfterModReadySeconds = g_rules.delayAfterModReadySeconds;
+
+    Wh_Log(L"Auto-reorder rules loaded: %zu apps, enabled=%d, delay=%d s",
+           g_rules.apps.size(), g_settings.autoReorderOnModLoad ? 1 : 0,
+           g_settings.delayAfterModReadySeconds);
 }
+
+void RunAutoReorder() {
+    Wh_Log(L"RunAutoReorder: %zu app rule(s), oldTaskbarOnWin11=%d, "
+           L"explorerPatcher=%d",
+           g_rules.apps.size(), g_settings.oldTaskbarOnWin11 ? 1 : 0,
+           g_explorerPatcherInitialized.load() ? 1 : 0);
+    AutoReorder_RunEngineSelfTestLog();
+    AutoReorder_ComputeAndLogOrders(g_rules.apps);
+    RunAutoReorderApplyOnTaskbarThread(g_rules.apps);
+}
+
+void RunAutoReorderTestPass() {
+    if (!g_rulesValid) {
+        Wh_Log(L"Auto-reorder test: rules invalid or JSON parse failed");
+        return;
+    }
+
+    if (g_rules.apps.empty()) {
+        Wh_Log(L"Auto-reorder test: no apps in rules (empty apps array)");
+        return;
+    }
+
+    if (!g_initialized.load()) {
+        Wh_Log(L"Auto-reorder test: mod not initialized yet");
+        return;
+    }
+
+    Wh_Log(L"Auto-reorder: manual pass (hotkey)");
+    AutoReorder_TraceStep(L"T05 hotkey:before_engine");
+    AutoReorder_ComputeAndLogOrders(g_rules.apps);
+    AutoReorder_TraceStep(L"T06 hotkey:after_engine");
+    AutoReorder_TraceStep(L"T07 hotkey:before_run_apply");
+    RunAutoReorderApplyOnTaskbarThread(g_rules.apps);
+    AutoReorder_TraceStep(L"T08 hotkey:after_run_apply");
+}
+
+constexpr int kReorderHotkeyId = 1;
+constexpr wchar_t kReorderTriggerWindowClass[] =
+    L"WindhawkThumbnailReorderTrigger";
+constexpr wchar_t kReorderTriggerRegisteredMessageName[] =
+    L"Windhawk.TaskbarThumbnailReorder.Trigger";
+constexpr UINT kReorderTriggerRunMsg = WM_APP + 1;
+constexpr LRESULT kReorderTriggerAck = 0x574841;
+
+std::atomic<bool> g_reorderListenerThreadStop{false};
+HANDLE g_reorderListenerThread = nullptr;
+DWORD g_reorderListenerThreadId = 0;
+UINT g_reorderTriggerRegisteredMessage = 0;
+HWND g_reorderTriggerHwnd = nullptr;
+HANDLE g_triggerRetryTimer = nullptr;
+std::atomic<int> g_triggerRetryRemaining{0};
+
+void CancelTriggerRetryTimer() {
+    HANDLE timer = g_triggerRetryTimer;
+    if (!timer) {
+        return;
+    }
+
+    g_triggerRetryTimer = nullptr;
+    if (!DeleteTimerQueueTimer(nullptr, timer, INVALID_HANDLE_VALUE)) {
+        Wh_Log(L"Auto-reorder: DeleteTimerQueueTimer (retry) failed (%u)",
+               GetLastError());
+    }
+}
+
+void RunTriggerPassWithRetry() {
+    RunAutoReorderTestPass();
+    if (AutoReorder_HasAnyCachedOrderAtLeast(2)) {
+        g_triggerRetryRemaining = 0;
+        Wh_Log(L"order cached");
+        return;
+    }
+
+    int left = g_triggerRetryRemaining.fetch_sub(1) - 1;
+    if (left < 0) {
+        Wh_Log(L"retries exhausted");
+        return;
+    }
+
+    Wh_Log(L"retry (%d left)", left);
+    CreateTimerQueueTimer(
+        &g_triggerRetryTimer, nullptr,
+        [](PVOID, BOOLEAN) {
+            g_triggerRetryTimer = nullptr;
+            RunTriggerPassWithRetry();
+        },
+        nullptr, 5000, 0, WT_EXECUTEONLYONCE);
+}
+
+void HandleManualReorderTrigger(const wchar_t* source) {
+    Wh_Log(L"Auto-reorder: trigger from %s", source);
+    g_triggerRetryRemaining = 6;
+    RunTriggerPassWithRetry();
+}
+
+LRESULT CALLBACK ReorderTriggerWndProc(HWND hwnd,
+                                     UINT msg,
+                                     WPARAM wParam,
+                                     LPARAM lParam) {
+    if (g_reorderTriggerRegisteredMessage != 0 &&
+        msg == g_reorderTriggerRegisteredMessage) {
+        Wh_Log(L"trigger msg received");
+        PostMessageW(hwnd, kReorderTriggerRunMsg, 0, 0);
+        return kReorderTriggerAck;
+    }
+
+    if (msg == kReorderTriggerRunMsg) {
+        HandleManualReorderTrigger(L"PostMessage");
+        return 0;
+    }
+
+    if (msg == WM_HOTKEY && wParam == kReorderHotkeyId) {
+        HandleManualReorderTrigger(L"hotkey");
+        return 0;
+    }
+
+    return DefWindowProcW(hwnd, msg, wParam, lParam);
+}
+
+bool EnsureReorderTriggerWindowClassRegistered() {
+    WNDCLASSEXW wc{};
+    wc.cbSize = sizeof(wc);
+    wc.lpfnWndProc = ReorderTriggerWndProc;
+    wc.hInstance = GetModuleHandle(nullptr);
+    wc.lpszClassName = kReorderTriggerWindowClass;
+
+    if (!RegisterClassExW(&wc)) {
+        const DWORD err = GetLastError();
+        if (err != ERROR_CLASS_ALREADY_EXISTS) {
+            Wh_Log(L"Auto-reorder listener: RegisterClassExW failed (%u)", err);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+DWORD WINAPI ReorderListenerThreadProc(LPVOID param) {
+    const UINT virtualKey = static_cast<UINT>(
+        reinterpret_cast<ULONG_PTR>(param));
+
+    MSG msg;
+    PeekMessageW(&msg, nullptr, WM_USER, WM_USER, PM_NOREMOVE);
+
+    if (!EnsureReorderTriggerWindowClassRegistered()) {
+        return 0;
+    }
+
+    g_reorderTriggerRegisteredMessage = RegisterWindowMessageW(
+        kReorderTriggerRegisteredMessageName);
+    if (g_reorderTriggerRegisteredMessage == 0) {
+        Wh_Log(L"Auto-reorder listener: RegisterWindowMessage failed (%u)",
+               GetLastError());
+        return 0;
+    }
+
+    // Hidden popup (not HWND_MESSAGE) so AutoHotkey can target ahk_class.
+    g_reorderTriggerHwnd = CreateWindowExW(
+        WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW, kReorderTriggerWindowClass,
+        kReorderTriggerWindowClass, WS_POPUP, 0, 0, 0, 0, nullptr, nullptr,
+        GetModuleHandle(nullptr), nullptr);
+    if (!g_reorderTriggerHwnd) {
+        Wh_Log(L"Auto-reorder listener: CreateWindowExW failed (%u)",
+               GetLastError());
+        g_reorderTriggerRegisteredMessage = 0;
+        return 0;
+    }
+
+    ShowWindow(g_reorderTriggerHwnd, SW_HIDE);
+
+    Wh_Log(L"Auto-reorder listener: PostMessage window ready (class=%s, msg=%s, "
+           L"id=0x%X)",
+           kReorderTriggerWindowClass, kReorderTriggerRegisteredMessageName,
+           g_reorderTriggerRegisteredMessage);
+
+    bool hotkeyRegistered = false;
+    if (virtualKey != 0) {
+        hotkeyRegistered =
+            RegisterHotKey(g_reorderTriggerHwnd, kReorderHotkeyId, MOD_NOREPEAT,
+                           virtualKey) != FALSE;
+        if (!hotkeyRegistered) {
+            Wh_Log(L"Auto-reorder hotkey: RegisterHotKey failed (%u) for VK=%u",
+                   GetLastError(), virtualKey);
+        } else {
+            Wh_Log(L"Auto-reorder hotkey: registered VK=0x%X (%u)", virtualKey,
+                   virtualKey);
+        }
+    }
+
+    while (!g_reorderListenerThreadStop.load()) {
+        const BOOL result = GetMessageW(&msg, nullptr, 0, 0);
+        if (result <= 0) {
+            break;
+        }
+
+        TranslateMessage(&msg);
+        DispatchMessageW(&msg);
+    }
+
+    if (hotkeyRegistered) {
+        UnregisterHotKey(g_reorderTriggerHwnd, kReorderHotkeyId);
+    }
+
+    if (g_reorderTriggerHwnd) {
+        DestroyWindow(g_reorderTriggerHwnd);
+        g_reorderTriggerHwnd = nullptr;
+    }
+
+    g_reorderTriggerRegisteredMessage = 0;
+    Wh_Log(L"Auto-reorder listener: thread exiting");
+    return 0;
+}
+
+void StopReorderListenerThread() {
+    HANDLE thread = g_reorderListenerThread;
+    if (!thread) {
+        return;
+    }
+
+    g_reorderListenerThreadStop = true;
+
+    const DWORD threadId = g_reorderListenerThreadId;
+    if (threadId != 0) {
+        PostThreadMessage(threadId, WM_QUIT, 0, 0);
+    }
+
+    WaitForSingleObject(thread, 5000);
+    CloseHandle(thread);
+
+    g_reorderListenerThread = nullptr;
+    g_reorderListenerThreadId = 0;
+    g_reorderListenerThreadStop = false;
+}
+
+void UpdateReorderListener() {
+    StopReorderListenerThread();
+
+    if (!g_initialized.load()) {
+        return;
+    }
+
+    const bool wantHotkey = g_settings.hotkeyEnabled;
+    const bool wantPostMessage = g_settings.externalPostMessageTriggerEnabled;
+    if (!wantHotkey && !wantPostMessage) {
+        return;
+    }
+
+    UINT virtualKey = 0;
+    if (wantHotkey) {
+        virtualKey = static_cast<UINT>(g_settings.hotkeyVirtualKey);
+        if (virtualKey == 0) {
+            Wh_Log(L"Auto-reorder hotkey: virtual key 0 is invalid");
+            if (!wantPostMessage) {
+                return;
+            }
+            virtualKey = 0;
+        }
+    }
+
+    g_reorderListenerThreadStop = false;
+    g_reorderListenerThread =
+        CreateThread(nullptr, 0, ReorderListenerThreadProc,
+                     reinterpret_cast<LPVOID>(
+                         static_cast<ULONG_PTR>(virtualKey)),
+                     0, &g_reorderListenerThreadId);
+    if (!g_reorderListenerThread) {
+        Wh_Log(L"Auto-reorder listener: CreateThread failed (%u)",
+               GetLastError());
+        g_reorderListenerThreadId = 0;
+        return;
+    }
+
+    Wh_Log(L"Auto-reorder listener: thread started (hotkey=%d VK=0x%X, "
+           L"PostMessage=%d)",
+           wantHotkey ? 1 : 0, virtualKey, wantPostMessage ? 1 : 0);
+}
+
+void CALLBACK AutoReorderTimerCallback(PVOID /*lpParameter*/,
+                                       BOOLEAN /*timerOrWaitFired*/) {
+    g_autoReorderTimer = nullptr;
+
+    if (g_autoReorderDone.exchange(true)) {
+        Wh_Log(L"Auto-reorder: timer fired but session pass already done");
+        return;
+    }
+
+    Wh_Log(L"Auto-reorder: timer fired, starting session pass");
+    RunAutoReorder();
+}
+
+void CancelAutoReorderTimer() {
+    HANDLE timer = g_autoReorderTimer;
+    if (!timer) {
+        return;
+    }
+
+    g_autoReorderTimer = nullptr;
+    if (!DeleteTimerQueueTimer(nullptr, timer, INVALID_HANDLE_VALUE)) {
+        Wh_Log(L"Auto-reorder: DeleteTimerQueueTimer failed (%u)",
+               GetLastError());
+    }
+}
+
+void CALLBACK DeferredApplyTimerCallback(PVOID /*lpParameter*/,
+                                           BOOLEAN /*timerOrWaitFired*/) {
+    AutoReorder_TraceStep(L"T01 deferred_timer:enter");
+    g_deferredApplyTimer = nullptr;
+    g_deferredApplyTimerQueued = false;
+
+    if (!g_rulesValid || g_rules.apps.empty()) {
+        AutoReorder_TraceStep(L"T01b deferred_timer:exit rules_invalid");
+        return;
+    }
+
+    Wh_Log(L"Auto-reorder apply: deferred timer fired (off flyout hook stack)");
+    AutoReorder_TraceStep(L"T02 deferred_timer:before_run_apply");
+    RunAutoReorderApplyOnTaskbarThread(g_rules.apps, true);
+    AutoReorder_TraceStep(L"T03 deferred_timer:after_run_apply");
+}
+
+void CancelDeferredApplyTimer() {
+    HANDLE timer = g_deferredApplyTimer;
+    if (!timer) {
+        g_deferredApplyTimerQueued = false;
+        return;
+    }
+
+    g_deferredApplyTimer = nullptr;
+    g_deferredApplyTimerQueued = false;
+    if (!DeleteTimerQueueTimer(nullptr, timer, INVALID_HANDLE_VALUE)) {
+        Wh_Log(L"Auto-reorder: CancelDeferredApplyTimer failed (%u)",
+               GetLastError());
+    }
+}
+
+void CancelDeferredAutoReorderApply() {
+    CancelDeferredApplyTimer();
+}
+
+void ScheduleDeferredAutoReorderApply() {
+    if (g_deferredApplyTimerQueued.exchange(true)) {
+        return;
+    }
+
+    constexpr DWORD kDeferredApplyDelayMs = 200;
+
+    if (!CreateTimerQueueTimer(&g_deferredApplyTimer, nullptr,
+                               DeferredApplyTimerCallback, nullptr,
+                               kDeferredApplyDelayMs, 0,
+                               WT_EXECUTEONLYONCE)) {
+        g_deferredApplyTimerQueued = false;
+        Wh_Log(L"Auto-reorder apply: ScheduleDeferredApply failed (%u)",
+               GetLastError());
+    }
+}
+
+void StartAutoReorderTimerIfNeeded() {
+    if (!g_settings.autoReorderOnModLoad || !g_rulesValid) {
+        return;
+    }
+
+    if (g_autoReorderDone.load()) {
+        return;
+    }
+
+    if (g_autoReorderTimer) {
+        Wh_Log(L"Auto-reorder: one-shot timer already scheduled");
+        return;
+    }
+
+    DWORD delayMs =
+        static_cast<DWORD>(g_settings.delayAfterModReadySeconds) * 1000;
+
+    Wh_Log(L"Auto-reorder: scheduling one-shot timer in %d s",
+           g_settings.delayAfterModReadySeconds);
+
+    if (!CreateTimerQueueTimer(
+            &g_autoReorderTimer, nullptr, AutoReorderTimerCallback, nullptr,
+            delayMs, 0, WT_EXECUTEONLYONCE)) {
+        Wh_Log(L"Auto-reorder: CreateTimerQueueTimer failed (%u)",
+               GetLastError());
+        g_autoReorderTimer = nullptr;
+    }
+}
+
+
+
+// ----- auto-reorder-rules.cpp -----
+
+
+#include <cwctype>
+#include <functional>
+#include <unordered_set>
+
+namespace {
+
+constexpr int kDelayMinSeconds = 0;
+constexpr int kDelayMaxSeconds = 120;
+constexpr int kSchemaVersion = 1;
+
+int ClampDelaySeconds(int seconds) {
+    if (seconds < kDelayMinSeconds) {
+        return kDelayMinSeconds;
+    }
+    if (seconds > kDelayMaxSeconds) {
+        return kDelayMaxSeconds;
+    }
+    return seconds;
+}
+
+void TrimInPlace(std::wstring& s) {
+    size_t start = 0;
+    while (start < s.size() && iswspace(s[start])) {
+        ++start;
+    }
+    size_t end = s.size();
+    while (end > start && iswspace(s[end - 1])) {
+        --end;
+    }
+    s = s.substr(start, end - start);
+}
+
+using AutoReorderCommon::EqualsIgnoreCase;
+
+class JsonReader {
+   public:
+    explicit JsonReader(std::wstring_view text) : text_(text) {}
+
+    bool ParseObject(
+        const std::function<bool(std::wstring_view key)>& onKey) {
+        if (!ConsumeChar(L'{')) {
+            return false;
+        }
+        SkipWhitespace();
+        if (TryConsumeChar(L'}')) {
+            return true;
+        }
+        while (true) {
+            std::wstring key;
+            if (!ParseString(key)) {
+                return false;
+            }
+            SkipWhitespace();
+            if (!ConsumeChar(L':')) {
+                return false;
+            }
+            SkipWhitespace();
+            if (!onKey(key)) {
+                return false;
+            }
+            SkipWhitespace();
+            if (TryConsumeChar(L'}')) {
+                return true;
+            }
+            if (!ConsumeChar(L',')) {
+                return false;
+            }
+            SkipWhitespace();
+        }
+    }
+
+    bool ParseArray(const std::function<bool()>& onElement) {
+        if (!ConsumeChar(L'[')) {
+            return false;
+        }
+        SkipWhitespace();
+        if (TryConsumeChar(L']')) {
+            return true;
+        }
+        while (true) {
+            if (!onElement()) {
+                return false;
+            }
+            SkipWhitespace();
+            if (TryConsumeChar(L']')) {
+                return true;
+            }
+            if (!ConsumeChar(L',')) {
+                return false;
+            }
+            SkipWhitespace();
+        }
+    }
+
+    bool ParseString(std::wstring& out) {
+        if (!ConsumeChar(L'"')) {
+            SetError(L"expected string");
+            return false;
+        }
+        out.clear();
+        while (pos_ < text_.size()) {
+            wchar_t c = text_[pos_++];
+            if (c == L'"') {
+                return true;
+            }
+            if (c == L'\\') {
+                if (pos_ >= text_.size()) {
+                    SetError(L"unterminated escape in string");
+                    return false;
+                }
+                wchar_t e = text_[pos_++];
+                switch (e) {
+                    case L'"':
+                    case L'\\':
+                    case L'/':
+                        out.push_back(e);
+                        break;
+                    case L'b':
+                        out.push_back(L'\b');
+                        break;
+                    case L'f':
+                        out.push_back(L'\f');
+                        break;
+                    case L'n':
+                        out.push_back(L'\n');
+                        break;
+                    case L'r':
+                        out.push_back(L'\r');
+                        break;
+                    case L't':
+                        out.push_back(L'\t');
+                        break;
+                    case L'u': {
+                        if (pos_ + 4 > text_.size()) {
+                            SetError(L"invalid \\u escape");
+                            return false;
+                        }
+                        unsigned int code = 0;
+                        for (int i = 0; i < 4; ++i) {
+                            wchar_t hex = text_[pos_++];
+                            code <<= 4;
+                            if (hex >= L'0' && hex <= L'9') {
+                                code |= static_cast<unsigned>(hex - L'0');
+                            } else if (hex >= L'a' && hex <= L'f') {
+                                code |= static_cast<unsigned>(hex - L'a' + 10);
+                            } else if (hex >= L'A' && hex <= L'F') {
+                                code |= static_cast<unsigned>(hex - L'A' + 10);
+                            } else {
+                                SetError(L"invalid \\u escape");
+                                return false;
+                            }
+                        }
+                        if (code <= 0xFFFF) {
+                            out.push_back(static_cast<wchar_t>(code));
+                        } else {
+                            SetError(L"unsupported Unicode code point");
+                            return false;
+                        }
+                        break;
+                    }
+                    default:
+                        SetError(L"invalid escape in string");
+                        return false;
+                }
+                continue;
+            }
+            if (static_cast<unsigned char>(c) < 0x20) {
+                SetError(L"control character in string");
+                return false;
+            }
+            out.push_back(c);
+        }
+        SetError(L"unterminated string");
+        return false;
+    }
+
+    bool ParseBool(bool& out) {
+        if (TryConsumeLiteral(L"true")) {
+            out = true;
+            return true;
+        }
+        if (TryConsumeLiteral(L"false")) {
+            out = false;
+            return true;
+        }
+        SetError(L"expected boolean");
+        return false;
+    }
+
+    bool ParseInt(int& out) {
+        SkipWhitespace();
+        size_t start = pos_;
+        bool negative = false;
+        if (pos_ < text_.size() && text_[pos_] == L'-') {
+            negative = true;
+            ++pos_;
+        }
+        if (pos_ >= text_.size() || !iswdigit(text_[pos_])) {
+            SetError(L"expected number");
+            return false;
+        }
+        long long value = 0;
+        while (pos_ < text_.size() && iswdigit(text_[pos_])) {
+            value = value * 10 + (text_[pos_] - L'0');
+            ++pos_;
+        }
+        if (pos_ < text_.size()) {
+            wchar_t next = text_[pos_];
+            if (next == L'.' || next == L'e' || next == L'E') {
+                SetError(L"expected integer");
+                return false;
+            }
+        }
+        if (negative) {
+            value = -value;
+        }
+        out = static_cast<int>(value);
+        return true;
+    }
+
+    bool AtEnd() {
+        SkipWhitespace();
+        return pos_ >= text_.size();
+    }
+
+    const std::wstring& error() const { return error_; }
+
+   private:
+    std::wstring_view text_;
+    size_t pos_ = 0;
+    std::wstring error_;
+
+    void SkipWhitespace() {
+        while (pos_ < text_.size() && iswspace(text_[pos_])) {
+            ++pos_;
+        }
+    }
+
+    bool ConsumeChar(wchar_t c) {
+        SkipWhitespace();
+        if (pos_ < text_.size() && text_[pos_] == c) {
+            ++pos_;
+            return true;
+        }
+        error_ = std::wstring(L"expected '") + c + L"'";
+        return false;
+    }
+
+    bool TryConsumeChar(wchar_t c) {
+        SkipWhitespace();
+        if (pos_ < text_.size() && text_[pos_] == c) {
+            ++pos_;
+            return true;
+        }
+        return false;
+    }
+
+    bool TryConsumeLiteral(std::wstring_view literal) {
+        SkipWhitespace();
+        if (pos_ + literal.size() > text_.size()) {
+            return false;
+        }
+        if (text_.compare(pos_, literal.size(), literal) != 0) {
+            return false;
+        }
+        pos_ += literal.size();
+        return true;
+    }
+
+    void SetError(const wchar_t* message) { error_ = message; }
+};
+
+bool ParseMatchObject(JsonReader& reader, AutoReorderMatchRule& match,
+                      std::wstring& errorOut) {
+    bool hasStrings = false;
+    bool hasPosition = false;
+    bool ok = reader.ParseObject([&](std::wstring_view key) {
+        if (EqualsIgnoreCase(key, L"strings")) {
+            hasStrings = true;
+            return reader.ParseArray([&]() {
+                std::wstring s;
+                if (!reader.ParseString(s)) {
+                    return false;
+                }
+                TrimInPlace(s);
+                if (s.empty()) {
+                    errorOut = L"match strings entry must not be empty";
+                    return false;
+                }
+                match.strings.push_back(std::move(s));
+                return true;
+            });
+        }
+        if (EqualsIgnoreCase(key, L"position")) {
+            hasPosition = true;
+            return reader.ParseInt(match.position);
+        }
+        errorOut = std::wstring(L"unknown key in match: ") + std::wstring(key);
+        return false;
+    });
+    if (!ok) {
+        if (errorOut.empty()) {
+            errorOut = reader.error();
+        }
+        return false;
+    }
+    if (!hasStrings || match.strings.empty()) {
+        errorOut = L"match requires non-empty strings array";
+        return false;
+    }
+    if (!hasPosition) {
+        errorOut = L"match requires position";
+        return false;
+    }
+    if (match.position < 1) {
+        errorOut = L"match position must be >= 1";
+        return false;
+    }
+    return true;
+}
+
+bool ParseAppObject(JsonReader& reader, AutoReorderAppRules& app,
+                    std::wstring& errorOut) {
+    bool hasApp = false;
+    bool hasMatches = false;
+    bool ok = reader.ParseObject([&](std::wstring_view key) {
+        if (EqualsIgnoreCase(key, L"app")) {
+            hasApp = true;
+            return reader.ParseString(app.app);
+        }
+        if (EqualsIgnoreCase(key, L"matches")) {
+            hasMatches = true;
+            return reader.ParseArray([&]() {
+                AutoReorderMatchRule match;
+                if (!ParseMatchObject(reader, match, errorOut)) {
+                    return false;
+                }
+                app.matches.push_back(std::move(match));
+                return true;
+            });
+        }
+        errorOut = std::wstring(L"unknown key in app: ") + std::wstring(key);
+        return false;
+    });
+    if (!ok) {
+        if (errorOut.empty()) {
+            errorOut = reader.error();
+        }
+        return false;
+    }
+    if (!hasApp) {
+        errorOut = L"app entry requires app";
+        return false;
+    }
+    TrimInPlace(app.app);
+    if (app.app.empty()) {
+        errorOut = L"app name must not be empty";
+        return false;
+    }
+    if (!hasMatches) {
+        errorOut = L"app entry requires matches";
+        return false;
+    }
+    return true;
+}
+
+void WarnDuplicatePositions(const AutoReorderAppRules& app) {
+    std::unordered_set<int> seen;
+    for (const auto& match : app.matches) {
+        if (!seen.insert(match.position).second) {
+            Wh_Log(L"Auto-reorder: duplicate position %d for app %s",
+                   match.position, app.app.c_str());
+        }
+    }
+}
+
+bool ParseRulesJsonDocument(std::wstring_view jsonText, AutoReorderRules& out,
+                            std::wstring& errorOut) {
+    JsonReader reader(jsonText);
+    bool hasVersion = false;
+    bool hasAutoReorder = false;
+    bool hasDelay = false;
+    bool hasApps = false;
+
+    bool ok = reader.ParseObject([&](std::wstring_view key) {
+        if (EqualsIgnoreCase(key, L"version")) {
+            hasVersion = true;
+            return reader.ParseInt(out.version);
+        }
+        if (EqualsIgnoreCase(key, L"autoReorderOnModLoad")) {
+            hasAutoReorder = true;
+            return reader.ParseBool(out.autoReorderOnModLoad);
+        }
+        if (EqualsIgnoreCase(key, L"delayAfterModReadySeconds")) {
+            hasDelay = true;
+            if (!reader.ParseInt(out.delayAfterModReadySeconds)) {
+                return false;
+            }
+            out.delayAfterModReadySeconds =
+                ClampDelaySeconds(out.delayAfterModReadySeconds);
+            return true;
+        }
+        if (EqualsIgnoreCase(key, L"apps")) {
+            hasApps = true;
+            return reader.ParseArray([&]() {
+                AutoReorderAppRules app;
+                if (!ParseAppObject(reader, app, errorOut)) {
+                    return false;
+                }
+                WarnDuplicatePositions(app);
+                out.apps.push_back(std::move(app));
+                return true;
+            });
+        }
+        errorOut = std::wstring(L"unknown top-level key: ") + std::wstring(key);
+        return false;
+    });
+
+    if (!ok) {
+        if (errorOut.empty()) {
+            errorOut = reader.error();
+        }
+        return false;
+    }
+    if (!reader.AtEnd()) {
+        errorOut = L"unexpected trailing content in JSON";
+        return false;
+    }
+    if (!hasVersion) {
+        errorOut = L"missing version";
+        return false;
+    }
+    if (out.version != kSchemaVersion) {
+        errorOut = L"unsupported version (expected 1)";
+        return false;
+    }
+    if (!hasApps) {
+        errorOut = L"missing apps";
+        return false;
+    }
+    if (!hasAutoReorder) {
+        // Keep value already set from UI merge.
+    }
+    if (!hasDelay) {
+        out.delayAfterModReadySeconds =
+            ClampDelaySeconds(out.delayAfterModReadySeconds);
+    }
+    return true;
+}
+
+}  // namespace
+
+void AutoReorderRules_LoadFromSettings(bool uiAutoReorderOnModLoad,
+                                       int uiDelaySeconds,
+                                       PCWSTR rulesJsonText,
+                                       AutoReorderRules& out,
+                                       bool& validOut,
+                                       std::wstring& errorOut) {
+    errorOut.clear();
+    validOut = true;
+
+    out = AutoReorderRules{};
+    out.autoReorderOnModLoad = uiAutoReorderOnModLoad;
+    out.delayAfterModReadySeconds = ClampDelaySeconds(uiDelaySeconds);
+
+    std::wstring json =
+        rulesJsonText ? std::wstring(rulesJsonText) : std::wstring{};
+    TrimInPlace(json);
+
+    if (json.empty()) {
+        out.version = kSchemaVersion;
+        return;
+    }
+
+    if (!ParseRulesJsonDocument(json, out, errorOut)) {
+        validOut = false;
+        out.apps.clear();
+        return;
+    }
+}
+
+// ----- auto-reorder-enumeration.cpp -----
+
+
+#include <objbase.h>
+
+#include <cwctype>
+#include <string>
+
+// {AA509086-5CA9-4C25-BF23-AFAC86C30765}
+constexpr CLSID kVirtualDesktopManagerClsid = {
+    0xAA509086,
+    0x5CA9,
+    0x4C25,
+    {0xBF, 0x23, 0xAF, 0xAC, 0x86, 0xC3, 0x07, 0x65}};
+
+// {A5F59FC4-5DE8-496A-9B7E-0886E57E5106}
+constexpr IID kVirtualDesktopManagerIID = {
+    0xA5F59FC4,
+    0x5DE8,
+    0x496A,
+    {0x9B, 0x7E, 0x08, 0x86, 0xE5, 0x7E, 0x51, 0x06}};
+
+constexpr GUID kSingleDesktopFallbackId = {
+    0xA1B2C3D4,
+    0xE5F6,
+    0x4789,
+    {0xAB, 0xCD, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x90}};
+
+enum class VirtualDesktopMode { Unknown, ComManager, SingleDesktopFallback };
+
+MIDL_INTERFACE("A5F59FC4-5DE8-496A-9B7E-0886E57E5106")
+IVirtualDesktopManager : public IUnknown {
+   public:
+    virtual HRESULT STDMETHODCALLTYPE IsWindowOnCurrentVirtualDesktop(
+        HWND topLevelWindow,
+        BOOL* onCurrentDesktopOut) = 0;
+    virtual HRESULT STDMETHODCALLTYPE GetWindowDesktopId(
+        HWND topLevelWindow,
+        GUID* desktopIdOut) = 0;
+};
+
+IVirtualDesktopManager* g_virtualDesktopManager = nullptr;
+VirtualDesktopMode g_virtualDesktopMode = VirtualDesktopMode::Unknown;
+
+bool UsesSingleDesktopFallback() {
+    return g_virtualDesktopMode == VirtualDesktopMode::SingleDesktopFallback;
+}
+
+void EnsureComInitializedOnThread() {
+    const HRESULT hr =
+        CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) {
+        Wh_Log(L"Auto-reorder: CoInitializeEx failed (0x%08X)", hr);
+    }
+}
+
+bool EnsureVirtualDesktopManager() {
+    if (g_virtualDesktopManager) {
+        return true;
+    }
+
+    if (UsesSingleDesktopFallback()) {
+        return false;
+    }
+
+    EnsureComInitializedOnThread();
+
+    HRESULT hr = CoCreateInstance(kVirtualDesktopManagerClsid, nullptr,
+                                  CLSCTX_INPROC_SERVER, kVirtualDesktopManagerIID,
+                                  reinterpret_cast<void**>(
+                                      &g_virtualDesktopManager));
+    if (SUCCEEDED(hr)) {
+        g_virtualDesktopMode = VirtualDesktopMode::ComManager;
+        return true;
+    }
+
+    if (g_virtualDesktopMode == VirtualDesktopMode::Unknown) {
+        Wh_Log(L"Auto-reorder: IVirtualDesktopManager unavailable (0x%08X); "
+               L"using single-desktop mode",
+               hr);
+        g_virtualDesktopMode = VirtualDesktopMode::SingleDesktopFallback;
+    }
+
+    return false;
+}
+
+bool GetWindowVirtualDesktopIdForHwnd(HWND hwnd, GUID& desktopIdOut) {
+    if (EnsureVirtualDesktopManager()) {
+        return SUCCEEDED(
+            g_virtualDesktopManager->GetWindowDesktopId(hwnd, &desktopIdOut));
+    }
+
+    if (UsesSingleDesktopFallback()) {
+        desktopIdOut = kSingleDesktopFallbackId;
+        return true;
+    }
+
+    return false;
+}
+
+namespace {
+
+using AutoReorderCommon::EqualsIgnoreCase;
+using AutoReorderCommon::ToLowerCopy;
+
+std::wstring GuidToLogString(const GUID& guid) {
+    wchar_t buffer[64]{};
+    if (StringFromGUID2(guid, buffer, static_cast<int>(std::size(buffer))) <=
+        0) {
+        return L"{?}";
+    }
+    return buffer;
+}
+
+bool IsTopLevelWindow(HWND hwnd) {
+    return GetAncestor(hwnd, GA_ROOT) == hwnd;
+}
+
+std::wstring GetWindowProcessExeName(HWND hwnd) {
+    DWORD processId = 0;
+    GetWindowThreadProcessId(hwnd, &processId);
+    if (!processId) {
+        return {};
+    }
+
+    HANDLE process =
+        OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, processId);
+    if (!process) {
+        return {};
+    }
+
+    wchar_t path[MAX_PATH]{};
+    DWORD pathSize = ARRAYSIZE(path);
+    std::wstring exeName;
+    if (QueryFullProcessImageNameW(process, 0, path, &pathSize)) {
+        const wchar_t* baseName = wcsrchr(path, L'\\');
+        exeName = baseName ? baseName + 1 : path;
+    }
+
+    CloseHandle(process);
+    return ToLowerCopy(std::move(exeName));
+}
+
+bool IsFileExplorerWindow(HWND hwnd) {
+    wchar_t className[64]{};
+    if (!GetClassNameW(hwnd, className, ARRAYSIZE(className))) {
+        return false;
+    }
+
+    return wcscmp(className, L"CabinetWClass") == 0 ||
+           wcscmp(className, L"ExploreWClass") == 0;
+}
+
+bool WindowMatchesAppExe(HWND hwnd, std::wstring_view appExeLower) {
+    if (EqualsIgnoreCase(appExeLower, L"explorer.exe")) {
+        return IsFileExplorerWindow(hwnd);
+    }
+
+    return EqualsIgnoreCase(GetWindowProcessExeName(hwnd), appExeLower);
+}
+
+bool WindowOnDesktop(HWND hwnd, const GUID& desktopId) {
+    if (UsesSingleDesktopFallback() &&
+        IsEqualGUID(desktopId, kSingleDesktopFallbackId)) {
+        return true;
+    }
+
+    GUID windowDesktopId{};
+    if (!GetWindowVirtualDesktopIdForHwnd(hwnd, windowDesktopId)) {
+        return false;
+    }
+    return IsEqualGUID(windowDesktopId, desktopId) != FALSE;
+}
+
+struct CollectDesktopIdsContext {
+    std::vector<GUID> desktopIds;
+};
+
+BOOL CALLBACK CollectDesktopIdsProc(HWND hwnd, LPARAM lParam) {
+    auto* context = reinterpret_cast<CollectDesktopIdsContext*>(lParam);
+    if (!IsTopLevelWindow(hwnd)) {
+        return TRUE;
+    }
+
+    GUID desktopId{};
+    if (!GetWindowVirtualDesktopIdForHwnd(hwnd, desktopId)) {
+        return TRUE;
+    }
+
+    for (const GUID& existing : context->desktopIds) {
+        if (IsEqualGUID(existing, desktopId)) {
+            return TRUE;
+        }
+    }
+
+    context->desktopIds.push_back(desktopId);
+    return TRUE;
+}
+
+bool IsLikelyTaskbarWindow(HWND hwnd) {
+    if (!IsWindowVisible(hwnd)) {
+        return false;
+    }
+
+    const HWND owner = GetWindow(hwnd, GW_OWNER);
+    if (owner && owner != hwnd) {
+        return false;
+    }
+
+    const LONG exStyle = GetWindowLongW(hwnd, GWL_EXSTYLE);
+    if (exStyle & WS_EX_TOOLWINDOW) {
+        return false;
+    }
+
+    return true;
+}
+
+struct CollectAppWindowsContext {
+    std::wstring appExeLower;
+    GUID desktopId{};
+    std::vector<HWND> windows;
+};
+
+BOOL CALLBACK CollectAppWindowsProc(HWND hwnd, LPARAM lParam) {
+    auto* context = reinterpret_cast<CollectAppWindowsContext*>(lParam);
+    if (!IsTopLevelWindow(hwnd)) {
+        return TRUE;
+    }
+
+    if (!IsLikelyTaskbarWindow(hwnd)) {
+        return TRUE;
+    }
+
+    if (!WindowOnDesktop(hwnd, context->desktopId)) {
+        return TRUE;
+    }
+
+    if (!WindowMatchesAppExe(hwnd, context->appExeLower)) {
+        return TRUE;
+    }
+
+    context->windows.push_back(hwnd);
+    return TRUE;
+}
+
+}  // namespace
+
+std::vector<GUID> EnumerateVirtualDesktops() {
+    if (UsesSingleDesktopFallback()) {
+        return {kSingleDesktopFallbackId};
+    }
+
+    CollectDesktopIdsContext context;
+    EnumWindows(CollectDesktopIdsProc, reinterpret_cast<LPARAM>(&context));
+
+    if (!context.desktopIds.empty()) {
+        return context.desktopIds;
+    }
+
+    if (!EnsureVirtualDesktopManager()) {
+        return {kSingleDesktopFallbackId};
+    }
+
+    Wh_Log(L"Auto-reorder: no desktop IDs from windows; using single-desktop "
+           L"mode");
+    g_virtualDesktopMode = VirtualDesktopMode::SingleDesktopFallback;
+    return {kSingleDesktopFallbackId};
+}
+
+std::vector<HWND> GetWindowsForAppOnDesktop(const std::wstring& appExe,
+                                            const GUID& desktopId) {
+    AutoReorder_TraceStepU(L"T80 enum_app_windows:enter",
+                           reinterpret_cast<ULONG_PTR>(appExe.c_str()));
+    CollectAppWindowsContext context;
+    context.appExeLower = ToLowerCopy(appExe);
+    context.desktopId = desktopId;
+    EnumWindows(CollectAppWindowsProc, reinterpret_cast<LPARAM>(&context));
+    AutoReorder_TraceStep2U(L"T81 enum_app_windows:exit", context.windows.size(),
+                            0);
+    return context.windows;
+}
+
+void AutoReorder_LogEnumeratedTargets(
+    const std::vector<AutoReorderAppRules>& appRules) {
+    if (appRules.empty()) {
+        Wh_Log(L"Auto-reorder: no app rules configured");
+        return;
+    }
+
+    std::vector<GUID> desktops = EnumerateVirtualDesktops();
+    if (desktops.empty()) {
+        Wh_Log(L"Auto-reorder: no virtual desktops discovered from windows");
+        return;
+    }
+
+    if (UsesSingleDesktopFallback()) {
+        Wh_Log(L"Auto-reorder: single-desktop mode (IVirtualDesktopManager "
+               L"unavailable)");
+    } else {
+        Wh_Log(L"Auto-reorder: discovered %zu virtual desktop(s)",
+               desktops.size());
+    }
+
+    for (size_t desktopIndex = 0; desktopIndex < desktops.size();
+         ++desktopIndex) {
+        const GUID& desktopId = desktops[desktopIndex];
+        Wh_Log(L"Auto-reorder: desktop[%zu] %s", desktopIndex,
+               GuidToLogString(desktopId).c_str());
+
+        for (const AutoReorderAppRules& appRule : appRules) {
+            std::vector<HWND> windows =
+                GetWindowsForAppOnDesktop(appRule.app, desktopId);
+            Wh_Log(L"Auto-reorder:   app %s: %zu window(s)",
+                   appRule.app.c_str(), windows.size());
+        }
+    }
+}
+
+void AutoReorderEnumeration_Uninit() {
+    if (g_virtualDesktopManager) {
+        g_virtualDesktopManager->Release();
+        g_virtualDesktopManager = nullptr;
+    }
+    g_virtualDesktopMode = VirtualDesktopMode::Unknown;
+}
+
+// ----- auto-reorder-uia.cpp -----
+
+
+#include <UIAutomation.h>
+#include <objbase.h>
+
+#include <atomic>
+#include <cwctype>
+#include <string>
+
+namespace {
+
+constexpr int kMaxTabTitles = 64;
+constexpr DWORD kUiaPerWindowTimeoutMs = 2000;
+
+// {ff48dba4-60ef-4201-aa87-54103eef594e}
+constexpr CLSID kCUIAutomationClsid = {
+    0xff48dba4,
+    0x60ef,
+    0x4201,
+    {0xaa, 0x87, 0x54, 0x10, 0x3e, 0xef, 0x59, 0x4e}};
+
+void ReleaseVariant(VARIANT& variant) {
+    VariantClear(&variant);
+}
+
+bool CreateControlTypeCondition(IUIAutomation* automation,
+                                CONTROLTYPEID controlType,
+                                IUIAutomationCondition** conditionOut) {
+    VARIANT variant{};
+    variant.vt = VT_I4;
+    variant.lVal = controlType;
+    HRESULT hr = automation->CreatePropertyCondition(UIA_ControlTypePropertyId,
+                                                     variant, conditionOut);
+    ReleaseVariant(variant);
+    return SUCCEEDED(hr);
+}
+
+void AppendTabItemNames(IUIAutomationElement* scope,
+                        IUIAutomation* automation,
+                        std::vector<std::wstring>& titlesOut) {
+    if (!scope || titlesOut.size() >= static_cast<size_t>(kMaxTabTitles)) {
+        return;
+    }
+
+    IUIAutomationCondition* tabItemCondition = nullptr;
+    if (!CreateControlTypeCondition(automation, UIA_TabItemControlTypeId,
+                                    &tabItemCondition)) {
+        return;
+    }
+
+    IUIAutomationElementArray* tabItems = nullptr;
+    HRESULT hr = scope->FindAll(TreeScope_Descendants, tabItemCondition,
+                                &tabItems);
+    tabItemCondition->Release();
+
+    if (FAILED(hr) || !tabItems) {
+        return;
+    }
+
+    int length = 0;
+    tabItems->get_Length(&length);
+    for (int i = 0; i < length &&
+                    titlesOut.size() < static_cast<size_t>(kMaxTabTitles);
+         ++i) {
+        IUIAutomationElement* tabItem = nullptr;
+        if (FAILED(tabItems->GetElement(i, &tabItem)) || !tabItem) {
+            continue;
+        }
+
+        BSTR name = nullptr;
+        if (SUCCEEDED(tabItem->get_CurrentName(&name)) && name) {
+            if (SysStringLen(name) > 0) {
+                titlesOut.emplace_back(name);
+            }
+            SysFreeString(name);
+        }
+
+        tabItem->Release();
+    }
+
+    tabItems->Release();
+}
+
+bool CollectTabTitlesViaUia(HWND hwnd, std::vector<std::wstring>& titlesOut) {
+    IUIAutomation* automation = nullptr;
+    HRESULT hr = CoCreateInstance(kCUIAutomationClsid, nullptr,
+                                  CLSCTX_INPROC_SERVER, __uuidof(IUIAutomation),
+                                  reinterpret_cast<void**>(&automation));
+    if (FAILED(hr) || !automation) {
+        Wh_Log(L"Auto-reorder UIA: CoCreateInstance(CUIAutomation) failed "
+               L"(0x%08X)",
+               hr);
+        return false;
+    }
+
+    IUIAutomationElement* root = nullptr;
+    hr = automation->ElementFromHandle(hwnd, &root);
+    if (FAILED(hr) || !root) {
+        automation->Release();
+        return false;
+    }
+
+    IUIAutomationCondition* tabControlCondition = nullptr;
+    if (CreateControlTypeCondition(automation, UIA_TabControlTypeId,
+                                   &tabControlCondition)) {
+        IUIAutomationElement* tabControl = nullptr;
+        hr = root->FindFirst(TreeScope_Descendants, tabControlCondition,
+                             &tabControl);
+        tabControlCondition->Release();
+
+        if (SUCCEEDED(hr) && tabControl) {
+            AppendTabItemNames(tabControl, automation, titlesOut);
+            tabControl->Release();
+        }
+    }
+
+    if (titlesOut.empty()) {
+        AppendTabItemNames(root, automation, titlesOut);
+    }
+
+    root->Release();
+    automation->Release();
+    return !titlesOut.empty();
+}
+
+struct UiaCollectWork {
+    HWND hwnd = nullptr;
+    std::atomic<bool> abandoned{false};
+    std::vector<std::wstring> titles;
+    bool uiaSuccess = false;
+};
+
+DWORD WINAPI UiaCollectThreadProc(LPVOID parameter) {
+    HRESULT hr =
+        CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    if (FAILED(hr)) {
+        Wh_Log(L"Auto-reorder UIA: CoInitializeEx on worker failed (0x%08X)",
+               hr);
+        return 1;
+    }
+
+    auto* work = static_cast<UiaCollectWork*>(parameter);
+    std::vector<std::wstring> localTitles;
+    const bool success = CollectTabTitlesViaUia(work->hwnd, localTitles);
+    if (!work->abandoned.load(std::memory_order_acquire)) {
+        work->titles = std::move(localTitles);
+        work->uiaSuccess = success;
+    }
+
+    CoUninitialize();
+    return 0;
+}
+
+bool CollectTabTitlesViaUiaWithTimeout(HWND hwnd,
+                                       std::vector<std::wstring>& titlesOut) {
+    UiaCollectWork work{};
+    work.hwnd = hwnd;
+
+    HANDLE thread =
+        CreateThread(nullptr, 0, UiaCollectThreadProc, &work, 0, nullptr);
+    if (!thread) {
+        Wh_Log(L"Auto-reorder UIA: CreateThread failed (%u)", GetLastError());
+        return false;
+    }
+
+    const DWORD waitResult =
+        WaitForSingleObject(thread, kUiaPerWindowTimeoutMs);
+    if (waitResult == WAIT_TIMEOUT) {
+        work.abandoned.store(true, std::memory_order_release);
+        Wh_Log(L"Auto-reorder UIA: hwnd %p timed out after %u ms, using "
+               L"fallback",
+               hwnd, kUiaPerWindowTimeoutMs);
+        WaitForSingleObject(thread, INFINITE);
+        CloseHandle(thread);
+        return false;
+    }
+
+    if (waitResult != WAIT_OBJECT_0) {
+        Wh_Log(L"Auto-reorder UIA: WaitForSingleObject failed (%u)",
+               GetLastError());
+        work.abandoned.store(true, std::memory_order_release);
+        WaitForSingleObject(thread, INFINITE);
+        CloseHandle(thread);
+        return false;
+    }
+
+    CloseHandle(thread);
+
+    if (work.uiaSuccess && !work.titles.empty()) {
+        titlesOut = std::move(work.titles);
+        return true;
+    }
+
+    return false;
+}
+
+std::wstring GetWindowTitleFallback(HWND hwnd) {
+    wchar_t title[1024]{};
+    const int length = GetWindowTextW(hwnd, title, ARRAYSIZE(title));
+    if (length <= 0) {
+        return {};
+    }
+    return title;
+}
+
+void LogTabTitlesForWindow(HWND hwnd, const std::vector<std::wstring>& titles) {
+    if (titles.empty()) {
+        Wh_Log(L"Auto-reorder:     hwnd %p: no tab titles", hwnd);
+        return;
+    }
+
+    for (size_t i = 0; i < titles.size(); ++i) {
+        Wh_Log(L"Auto-reorder:     hwnd %p tab[%zu]: \"%s\"", hwnd, i,
+               titles[i].c_str());
+    }
+}
+
+}  // namespace
+
+bool AutoReorder_ContainsSubstringIgnoreCase(std::wstring_view haystack,
+                                             std::wstring_view needle) {
+    if (needle.empty()) {
+        return true;
+    }
+    if (haystack.size() < needle.size()) {
+        return false;
+    }
+
+    for (size_t i = 0; i <= haystack.size() - needle.size(); ++i) {
+        bool matches = true;
+        for (size_t j = 0; j < needle.size(); ++j) {
+            if (towlower(haystack[i + j]) != towlower(needle[j])) {
+                matches = false;
+                break;
+            }
+        }
+        if (matches) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool AutoReorder_TabTitlesContainAllStrings(
+    const std::vector<std::wstring>& tabTitles,
+    const std::vector<std::wstring>& requiredStrings) {
+    for (const std::wstring& required : requiredStrings) {
+        bool found = false;
+        for (const std::wstring& tabTitle : tabTitles) {
+            if (AutoReorder_ContainsSubstringIgnoreCase(tabTitle, required)) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            return false;
+        }
+    }
+    return true;
+}
+
+std::vector<std::wstring> GetTabTitlesForWindow(HWND hwnd) {
+    std::vector<std::wstring> titles;
+    if (CollectTabTitlesViaUiaWithTimeout(hwnd, titles)) {
+        return titles;
+    }
+
+    std::wstring windowTitle = GetWindowTitleFallback(hwnd);
+    if (!windowTitle.empty()) {
+        titles.push_back(std::move(windowTitle));
+        Wh_Log(L"Auto-reorder UIA: hwnd %p using window title fallback", hwnd);
+    }
+
+    return titles;
+}
+
+void AutoReorder_LogTabTitlesForTargets(
+    const std::vector<AutoReorderAppRules>& appRules) {
+    if (appRules.empty()) {
+        return;
+    }
+
+    std::vector<GUID> desktops = EnumerateVirtualDesktops();
+    if (desktops.empty()) {
+        Wh_Log(L"Auto-reorder UIA: skipping tab title log (no desktops)");
+        return;
+    }
+
+    for (size_t desktopIndex = 0; desktopIndex < desktops.size();
+         ++desktopIndex) {
+        const GUID& desktopId = desktops[desktopIndex];
+
+        for (const AutoReorderAppRules& appRule : appRules) {
+            std::vector<HWND> windows =
+                GetWindowsForAppOnDesktop(appRule.app, desktopId);
+            if (windows.empty()) {
+                continue;
+            }
+
+            Wh_Log(L"Auto-reorder UIA: desktop[%zu] app %s tab titles:",
+                   desktopIndex, appRule.app.c_str());
+
+            for (HWND hwnd : windows) {
+                std::vector<std::wstring> titles = GetTabTitlesForWindow(hwnd);
+                LogTabTitlesForWindow(hwnd, titles);
+            }
+        }
+    }
+}
+
+void AutoReorderUia_Uninit() {}
+
+// ----- auto-reorder-engine.cpp -----
+
+
+#include <algorithm>
+#include <mutex>
+
+namespace {
+
+using AutoReorderCommon::EqualsIgnoreCase;
+using AutoReorderCommon::ToLowerCopy;
+
+struct CachedDesktopOrder {
+    std::wstring appExeLower;
+    GUID desktopId{};
+    std::vector<HWND> hwndOrder;
+};
+
+std::mutex g_cachedDesktopOrdersMutex;
+std::vector<CachedDesktopOrder> g_cachedDesktopOrders;
+
+int FindFirstMatchingUnassignedWindow(
+    const std::vector<WindowWithTabTitles>& windows,
+    const std::vector<bool>& assigned,
+    const AutoReorderMatchRule& rule) {
+    for (size_t i = 0; i < windows.size(); ++i) {
+        if (assigned[i]) {
+            continue;
+        }
+        if (AutoReorder_TabTitlesContainAllStrings(windows[i].tabTitles,
+                                                   rule.strings)) {
+            return static_cast<int>(i);
+        }
+    }
+    return -1;
+}
+
+void LogComputedOrder(HWND hwnd,
+                      size_t rank,
+                      const std::vector<WindowWithTabTitles>& windows) {
+    size_t windowIndex = 0;
+    for (; windowIndex < windows.size(); ++windowIndex) {
+        if (windows[windowIndex].hwnd == hwnd) {
+            break;
+        }
+    }
+
+    if (windowIndex < windows.size()) {
+        Wh_Log(L"Auto-reorder engine:   #%zu hwnd %p (%zu tab title(s))", rank,
+               hwnd, windows[windowIndex].tabTitles.size());
+    } else {
+        Wh_Log(L"Auto-reorder engine:   #%zu hwnd %p", rank, hwnd);
+    }
+}
+
+}  // namespace
+
+void AutoReorder_ClearCachedDesktopOrders() {
+    std::lock_guard<std::mutex> lock(g_cachedDesktopOrdersMutex);
+    g_cachedDesktopOrders.clear();
+}
+
+bool AutoReorder_HasAnyCachedOrderAtLeast(size_t n) {
+    std::lock_guard<std::mutex> lock(g_cachedDesktopOrdersMutex);
+    for (const auto& entry : g_cachedDesktopOrders) {
+        if (entry.hwndOrder.size() >= n) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void AutoReorder_StoreCachedDesktopOrder(const std::wstring& appExe,
+                                         const GUID& desktopId,
+                                         std::vector<HWND> hwndOrder) {
+    const std::wstring appLower = ToLowerCopy(appExe);
+    std::lock_guard<std::mutex> lock(g_cachedDesktopOrdersMutex);
+    for (auto it = g_cachedDesktopOrders.begin(); it != g_cachedDesktopOrders.end();
+         ++it) {
+        if (EqualsIgnoreCase(it->appExeLower, appLower) &&
+            IsEqualGUID(it->desktopId, desktopId)) {
+            it->hwndOrder = std::move(hwndOrder);
+            return;
+        }
+    }
+
+    CachedDesktopOrder entry;
+    entry.appExeLower = appLower;
+    entry.desktopId = desktopId;
+    entry.hwndOrder = std::move(hwndOrder);
+    g_cachedDesktopOrders.push_back(std::move(entry));
+}
+
+bool AutoReorder_TryGetCachedDesktopOrder(const std::wstring& appExe,
+                                          const GUID& desktopId,
+                                          std::vector<HWND>& hwndOrderOut) {
+    const std::wstring appLower = ToLowerCopy(appExe);
+    std::lock_guard<std::mutex> lock(g_cachedDesktopOrdersMutex);
+    for (const CachedDesktopOrder& entry : g_cachedDesktopOrders) {
+        if (EqualsIgnoreCase(entry.appExeLower, appLower) &&
+            IsEqualGUID(entry.desktopId, desktopId)) {
+            hwndOrderOut = entry.hwndOrder;
+            return !hwndOrderOut.empty();
+        }
+    }
+
+    return false;
+}
+
+std::vector<HWND> ComputeOrder(
+    const std::vector<WindowWithTabTitles>& windows,
+    const std::vector<AutoReorderMatchRule>& matches) {
+    const size_t windowCount = windows.size();
+    if (windowCount == 0) {
+        return {};
+    }
+
+    if (matches.empty()) {
+        std::vector<HWND> stableOrder;
+        stableOrder.reserve(windowCount);
+        for (const WindowWithTabTitles& window : windows) {
+            stableOrder.push_back(window.hwnd);
+        }
+        return stableOrder;
+    }
+
+    std::vector<AutoReorderMatchRule> sortedMatches = matches;
+    std::stable_sort(sortedMatches.begin(), sortedMatches.end(),
+                     [](const AutoReorderMatchRule& a,
+                        const AutoReorderMatchRule& b) {
+                         return a.position < b.position;
+                     });
+
+    std::vector<HWND> result;
+    result.reserve(windowCount);
+    std::vector<bool> assigned(windowCount, false);
+
+    // Rules are tried in position order. Each successful match takes the next
+    // flyout slot (1, 2, 3, ...). Unmatched rules are skipped with no gap.
+    for (const AutoReorderMatchRule& rule : sortedMatches) {
+        const int windowIndex =
+            FindFirstMatchingUnassignedWindow(windows, assigned, rule);
+        if (windowIndex < 0) {
+            continue;
+        }
+
+        assigned[static_cast<size_t>(windowIndex)] = true;
+        result.push_back(windows[static_cast<size_t>(windowIndex)].hwnd);
+    }
+
+    for (size_t i = 0; i < windowCount; ++i) {
+        if (!assigned[i]) {
+            result.push_back(windows[i].hwnd);
+        }
+    }
+
+    return result;
+}
+
+void AutoReorder_ComputeAndLogOrders(
+    const std::vector<AutoReorderAppRules>& appRules) {
+    if (appRules.empty()) {
+        return;
+    }
+
+    AutoReorder_ClearCachedDesktopOrders();
+
+    std::vector<GUID> desktops = EnumerateVirtualDesktops();
+    if (desktops.empty()) {
+        return;
+    }
+
+    for (size_t desktopIndex = 0; desktopIndex < desktops.size();
+         ++desktopIndex) {
+        const GUID& desktopId = desktops[desktopIndex];
+
+        for (const AutoReorderAppRules& appRule : appRules) {
+            std::vector<HWND> windowHandles =
+                GetWindowsForAppOnDesktop(appRule.app, desktopId);
+            if (windowHandles.empty()) {
+                continue;
+            }
+
+            std::vector<WindowWithTabTitles> windows;
+            windows.reserve(windowHandles.size());
+            for (HWND hwnd : windowHandles) {
+                WindowWithTabTitles entry;
+                entry.hwnd = hwnd;
+                entry.tabTitles = GetTabTitlesForWindow(hwnd);
+                windows.push_back(std::move(entry));
+            }
+
+            std::vector<HWND> order = ComputeOrder(windows, appRule.matches);
+            Wh_Log(L"Auto-reorder engine: desktop[%zu] app %s computed order "
+                   L"(%zu window(s)):",
+                   desktopIndex, appRule.app.c_str(), order.size());
+
+            for (size_t rank = 0; rank < order.size(); ++rank) {
+                LogComputedOrder(order[rank], rank + 1, windows);
+            }
+
+            AutoReorder_StoreCachedDesktopOrder(appRule.app, desktopId,
+                                                std::move(order));
+        }
+    }
+}
+
+void AutoReorder_RunEngineSelfTestLog() {
+    const std::vector<AutoReorderMatchRule> rules = {
+        {{L"gmail", L"onenote"}, 1},
+        {{L"adidas"}, 2},
+    };
+
+    const std::vector<WindowWithTabTitles> fixtureWindows = {
+        {nullptr, {L"reddit"}},
+        {nullptr, {L"gmail", L"onenote", L"adidas"}},
+        {nullptr, {L"gmail"}},
+        {nullptr, {L"adidas"}},
+    };
+
+    const std::vector<HWND> expectedOrder = {
+        fixtureWindows[1].hwnd,
+        fixtureWindows[3].hwnd,
+        fixtureWindows[0].hwnd,
+        fixtureWindows[2].hwnd,
+    };
+
+    const std::vector<HWND> actualOrder =
+        ComputeOrder(fixtureWindows, rules);
+
+    bool passed = actualOrder.size() == expectedOrder.size();
+    for (size_t i = 0; passed && i < expectedOrder.size(); ++i) {
+        passed = actualOrder[i] == expectedOrder[i];
+    }
+
+    Wh_Log(L"Auto-reorder engine self-test (manual matrix): %s",
+           passed ? L"PASS" : L"FAIL");
+
+    // Skipped rule compresses later matches upward (AnimeKAI missing -> XDA at #2).
+    const std::vector<AutoReorderMatchRule> compressRules = {
+        {{L"rule-a"}, 1},
+        {{L"missing"}, 2},
+        {{L"rule-c"}, 3},
+    };
+    const std::vector<WindowWithTabTitles> compressWindows = {
+        {nullptr, {L"other"}},
+        {nullptr, {L"rule-a"}},
+        {nullptr, {L"rule-c"}},
+    };
+    const std::vector<HWND> compressExpected = {
+        compressWindows[1].hwnd,
+        compressWindows[2].hwnd,
+        compressWindows[0].hwnd,
+    };
+    const std::vector<HWND> compressActual =
+        ComputeOrder(compressWindows, compressRules);
+    bool compressPassed =
+        compressActual.size() == compressExpected.size();
+    for (size_t i = 0; compressPassed && i < compressExpected.size(); ++i) {
+        compressPassed = compressActual[i] == compressExpected[i];
+    }
+    Wh_Log(L"Auto-reorder engine self-test (skipped rule compress): %s",
+           compressPassed ? L"PASS" : L"FAIL");
+
+    if (!passed) {
+        for (size_t i = 0; i < actualOrder.size(); ++i) {
+            int fixtureIndex = -1;
+            for (size_t j = 0; j < fixtureWindows.size(); ++j) {
+                if (actualOrder[i] == fixtureWindows[j].hwnd) {
+                    fixtureIndex = static_cast<int>(j);
+                    break;
+                }
+            }
+            Wh_Log(
+                L"Auto-reorder engine self-test: actual[%zu] expected fixture "
+                L"W%d",
+                i, fixtureIndex);
+        }
+    }
+}
+
+#include <unordered_map>
+
+void* FindTaskGroupViaThumbnailMapping(const std::vector<HWND>& targetHwnds) {
+    if (!CWindowTaskItem_GetWindow || targetHwnds.empty()) {
+        return nullptr;
+    }
+
+    std::unordered_map<void*, size_t> groupMatchCounts;
+
+    for (const ThumbnailTaskItemMapping& mapping : g_thumbnailTaskItemMapping) {
+        if (!mapping.taskGroup || !mapping.taskItem) {
+            continue;
+        }
+
+        HWND hwnd = nullptr;
+        if (CImmersiveTaskItem_vftable &&
+            *(void**)mapping.taskItem == CImmersiveTaskItem_vftable &&
+            CImmersiveTaskItem_GetWindow) {
+            hwnd = CImmersiveTaskItem_GetWindow(mapping.taskItem);
+        } else {
+            hwnd = CWindowTaskItem_GetWindow(mapping.taskItem);
+        }
+
+        if (!hwnd) {
+            continue;
+        }
+
+        for (HWND target : targetHwnds) {
+            if (hwnd == target) {
+                groupMatchCounts[mapping.taskGroup]++;
+                break;
+            }
+        }
+    }
+
+    void* bestGroup = nullptr;
+    size_t bestCount = 0;
+    for (const auto& entry : groupMatchCounts) {
+        if (entry.second > bestCount) {
+            bestCount = entry.second;
+            bestGroup = entry.first;
+        }
+    }
+
+    if (bestGroup) {
+        Wh_Log(L"Auto-reorder apply: task group %p from XAML thumbnail mapping "
+               L"(%zu match(es))",
+               bestGroup, bestCount);
+    }
+
+    return bestCount > 0 ? bestGroup : nullptr;
+}
+
+void RefreshCachedTaskGroupFromThumbnailMapping(bool notifyApply) {
+    if (g_thumbnailTaskItemMapping.empty()) {
+        return;
+    }
+
+    std::unordered_map<void*, size_t> groupCounts;
+    for (const ThumbnailTaskItemMapping& mapping : g_thumbnailTaskItemMapping) {
+        if (mapping.taskGroup) {
+            groupCounts[mapping.taskGroup]++;
+        }
+    }
+
+    void* bestGroup = nullptr;
+    size_t bestCount = 0;
+    for (const auto& entry : groupCounts) {
+        if (entry.second > bestCount) {
+            bestCount = entry.second;
+            bestGroup = entry.first;
+        }
+    }
+
+    if (bestGroup && bestCount > 1) {
+        g_cachedTaskGroupFromFlyout = bestGroup;
+        Wh_Log(L"Auto-reorder: cached flyout task group %p (%zu thumbnail(s))",
+               bestGroup, bestCount);
+        if (notifyApply) {
+            AutoReorder_OnFlyoutMappingRefreshed();
+        }
+    }
+}
+
+bool AutoReorder_FlyoutThumbnailsReady() {
+    auto thumbnails = g_TaskGroup_Thumbnails.get();
+    if (!thumbnails) {
+        return false;
+    }
+
+    auto* thumbnailsPtr = winrt::get_abi(thumbnails);
+    const int thumbnailsSize =
+        TaskItemThumbnail_Size_Original(&thumbnailsPtr);
+    return thumbnailsSize >= 2;
+}
+
+bool AutoReorder_HasFlyoutThumbnailMapping() {
+    return !g_thumbnailTaskItemMapping.empty();
+}
+
+bool AutoReorder_IsXamlFlyoutPreviewActive() {
+    return g_TaskGroup_Thumbnails.get() != nullptr;
+}
+
+void AutoReorder_OnFlyoutMappingRefreshed() {
+    AutoReorder_TraceStep(L"T90 flyout_mapping_refreshed:enter");
+    if (!g_rulesValid || g_rules.apps.empty()) {
+        return;
+    }
+
+    if (g_reorderingXamlThumbnails) {
+        AutoReorder_TraceStep(L"T90b flyout_mapping_refreshed:skip reordering");
+        return;
+    }
+
+    if (g_pendingSessionApply.exchange(false) ||
+        !g_pendingXamlFlyoutOrder.empty()) {
+        AutoReorder_TraceStep(L"T91 flyout_mapping_refreshed:schedule_deferred");
+        ScheduleDeferredAutoReorderApply();
+        return;
+    }
+
+    if (AutoReorder_ShouldDeferApply()) {
+        Wh_Log(L"Auto-reorder apply: flyout mapping ready, scheduling deferred "
+               L"apply");
+        ScheduleDeferredAutoReorderApply();
+    }
+}
+
+// ----- auto-reorder-apply.cpp -----
+
+
+#include <atomic>
+#include <functional>
+#include <mutex>
+#include <unordered_map>
+#include <unordered_set>
+
+// Resolved in taskbar-thumbnail-reorder.wh.cpp (same translation unit).
+extern CTaskBtnGroup_GetGroupType_t CTaskBtnGroup_GetGroupType;
+extern CTaskBtnGroup_GetGroup_t CTaskBtnGroup_GetGroup;
+extern CWindowTaskItem_GetWindow_t CWindowTaskItem_GetWindow;
+extern CImmersiveTaskItem_GetWindow_t CImmersiveTaskItem_GetWindow;
+extern void* CImmersiveTaskItem_vftable;
+extern bool MoveTaskInGroup(void* taskGroup, void* taskItemFrom, void* taskItemTo);
+extern HDPA GetTaskItemsArray(void* taskGroup);
+
+using CTaskListThumbnailWnd_GetTaskGroup_t = void*(WINAPI*)(void* pThis);
+using CTaskListThumbnailWnd_TaskReordered_t = void(WINAPI*)(void* pThis,
+                                                           void* taskItem);
+extern CTaskListThumbnailWnd_GetTaskGroup_t CTaskListThumbnailWnd_GetTaskGroup;
+extern CTaskListThumbnailWnd_TaskReordered_t CTaskListThumbnailWnd_TaskReordered;
+
+namespace {
+
+std::atomic<size_t> g_taskListButtonGroupsOffset{SIZE_MAX};
+
+DWORD GetTaskbarUiThreadId() {
+    HWND trayWnd = FindWindowW(L"Shell_TrayWnd", nullptr);
+    if (!trayWnd) {
+        return 0;
+    }
+
+    DWORD threadId = 0;
+    GetWindowThreadProcessId(trayWnd, &threadId);
+    return threadId;
+}
+
+using XamlCallProc = void (*)(void*);
+struct XamlCall {
+    XamlCallProc proc;
+    void* param;
+};
+UINT g_xamlRunMsg = 0;
+LRESULT CALLBACK XamlCallHookProc(int code, WPARAM wp, LPARAM lp) {
+    if (code == HC_ACTION) {
+        auto* cwp = (CWPSTRUCT*)lp;
+        if (g_xamlRunMsg && cwp->message == g_xamlRunMsg) {
+            auto* c = (XamlCall*)cwp->lParam;
+            c->proc(c->param);
+        }
+    }
+    return CallNextHookEx(nullptr, code, wp, lp);
+}
+bool RunOnXamlTaskbarThread(XamlCallProc proc, void* param) {
+    DWORD tid = g_xamlTaskbarThreadId.load();
+    if (!tid) {
+        return false;
+    }
+    if (tid == GetCurrentThreadId()) {
+        proc(param);
+        return true;
+    }
+    if (!g_xamlRunMsg) {
+        g_xamlRunMsg = RegisterWindowMessageW(L"Windhawk.TTRF.XamlCall");
+    }
+    HWND target = nullptr;
+    EnumThreadWindows(
+        tid,
+        [](HWND h, LPARAM lp) -> BOOL {
+            *(HWND*)lp = h;
+            return FALSE;
+        },
+        (LPARAM)&target);
+    if (!target) {
+        return false;
+    }
+    HHOOK hook = SetWindowsHookExW(WH_CALLWNDPROC, XamlCallHookProc, nullptr, tid);
+    if (!hook) {
+        return false;
+    }
+    XamlCall call{proc, param};
+    SendMessageW(target, g_xamlRunMsg, 0, (LPARAM)&call);
+    UnhookWindowsHookEx(hook);
+    return true;
+}
+
+bool IsTaskbarUiThread() {
+    const DWORD taskbarThreadId = GetTaskbarUiThreadId();
+    return taskbarThreadId != 0 &&
+           taskbarThreadId == GetCurrentThreadId();
+}
+
+HWND GetPrimaryTaskListWnd() {
+    HWND trayWnd = FindWindowW(L"Shell_TrayWnd", nullptr);
+    if (!trayWnd) {
+        return nullptr;
+    }
+
+    HWND taskBandWnd =
+        reinterpret_cast<HWND>(GetPropW(trayWnd, L"TaskbandHWND"));
+    if (!taskBandWnd) {
+        return nullptr;
+    }
+
+    return FindWindowExW(taskBandWnd, nullptr, L"MSTaskListWClass", nullptr);
+}
+
+bool TaskbarSymbolsReady() {
+    return CTaskBtnGroup_GetGroupType && CTaskBtnGroup_GetGroup &&
+           CWindowTaskItem_GetWindow;
+}
+
+HWND GetHwndFromTaskItem(void* taskItem) {
+    if (!taskItem) {
+        return nullptr;
+    }
+
+    if (CImmersiveTaskItem_vftable &&
+        *(void**)taskItem == CImmersiveTaskItem_vftable &&
+        CImmersiveTaskItem_GetWindow) {
+        return CImmersiveTaskItem_GetWindow(taskItem);
+    }
+
+    if (CWindowTaskItem_GetWindow) {
+        return CWindowTaskItem_GetWindow(taskItem);
+    }
+
+    return nullptr;
+}
+
+bool IsPlausibleButtonGroupsDpa(HDPA hdpa) {
+    if (!hdpa) {
+        return false;
+    }
+
+    if (hdpa->cpItems < 1 || hdpa->cpItems > 500) {
+        return false;
+    }
+
+    if (!hdpa->pArray) {
+        return false;
+    }
+
+    return true;
+}
+
+bool ButtonGroupsDpaContainsTaskGroup(HDPA hdpa, void** sampleTaskGroupOut) {
+    if (!IsPlausibleButtonGroupsDpa(hdpa)) {
+        return false;
+    }
+
+    for (int i = 0; i < hdpa->cpItems; ++i) {
+        void* btnGroup = ((void**)hdpa->pArray)[i];
+        if (!btnGroup) {
+            continue;
+        }
+
+        int groupType = CTaskBtnGroup_GetGroupType(btnGroup);
+        if (groupType != 1 && groupType != 3) {
+            continue;
+        }
+
+        void* taskGroup = CTaskBtnGroup_GetGroup(btnGroup);
+        if (!taskGroup) {
+            continue;
+        }
+
+        HDPA taskItems = GetTaskItemsArray(taskGroup);
+        if (!taskItems || taskItems->cpItems < 1) {
+            continue;
+        }
+
+        if (sampleTaskGroupOut) {
+            *sampleTaskGroupOut = taskGroup;
+        }
+        return true;
+    }
+
+    return false;
+}
+
+HDPA GetButtonGroupsDpa(void* taskListWndPtr) {
+    AutoReorder_TraceStepU(L"T52 get_button_groups_dpa:enter list_ptr",
+                           reinterpret_cast<ULONG_PTR>(taskListWndPtr));
+    if (!taskListWndPtr) {
+        return nullptr;
+    }
+
+    size_t cachedOffset = g_taskListButtonGroupsOffset.load();
+    if (cachedOffset != SIZE_MAX) {
+        AutoReorder_TraceStep2U(L"T52b get_button_groups_dpa:cached_offset",
+                              cachedOffset, 0);
+        return *(HDPA*)((void**)taskListWndPtr)[cachedOffset];
+    }
+
+    for (size_t i = 0; i < 256; ++i) {
+        HDPA candidate = *(HDPA*)((void**)taskListWndPtr)[i];
+        void* sampleTaskGroup = nullptr;
+        if (ButtonGroupsDpaContainsTaskGroup(candidate, &sampleTaskGroup)) {
+            g_taskListButtonGroupsOffset.store(i);
+            return candidate;
+        }
+    }
+
+    return nullptr;
+}
+
+bool DesktopOrderAlreadyMatches(
+    HDPA taskItems,
+    const std::vector<int>& desktopSlotIndices,
+    const std::vector<void*>& desiredTaskItems) {
+    if (desktopSlotIndices.size() != desiredTaskItems.size()) {
+        return false;
+    }
+
+    for (size_t i = 0; i < desktopSlotIndices.size(); ++i) {
+        void* currentItem =
+            ((void**)taskItems->pArray)[desktopSlotIndices[i]];
+        if (currentItem != desiredTaskItems[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void NotifyThumbnailFlyoutReordered(void* taskGroup, void* taskItem) {
+    if (!CTaskListThumbnailWnd_GetTaskGroup ||
+        !CTaskListThumbnailWnd_TaskReordered || !taskGroup || !taskItem) {
+        return;
+    }
+
+    struct FindThumbnailWndContext {
+        void* taskGroup = nullptr;
+        void* thumbnailLongPtr = nullptr;
+    } context{taskGroup, nullptr};
+
+    EnumWindows(
+        [](HWND hwnd, LPARAM lParam) -> BOOL {
+            auto* ctx = reinterpret_cast<FindThumbnailWndContext*>(lParam);
+            wchar_t className[64]{};
+            if (GetClassNameW(hwnd, className, ARRAYSIZE(className)) == 0) {
+                return TRUE;
+            }
+            if (wcscmp(className, L"TaskListThumbnailWnd") != 0) {
+                return TRUE;
+            }
+
+            void* thumbnailLongPtr =
+                reinterpret_cast<void*>(GetWindowLongPtrW(hwnd, 0));
+            if (!thumbnailLongPtr) {
+                return TRUE;
+            }
+
+            if (CTaskListThumbnailWnd_GetTaskGroup(thumbnailLongPtr) ==
+                ctx->taskGroup) {
+                ctx->thumbnailLongPtr = thumbnailLongPtr;
+                return FALSE;
+            }
+
+            return TRUE;
+        },
+        reinterpret_cast<LPARAM>(&context));
+
+    if (context.thumbnailLongPtr) {
+        CTaskListThumbnailWnd_TaskReordered(context.thumbnailLongPtr, taskItem);
+    }
+}
+
+std::vector<HWND> BuildFlyoutAlignedApplyOrder(
+    const std::vector<HWND>& computedOrder,
+    const std::vector<HWND>& flyoutMappedHwnds) {
+    if (flyoutMappedHwnds.size() < 2) {
+        return computedOrder;
+    }
+
+    std::unordered_set<HWND> mappedSet(flyoutMappedHwnds.begin(),
+                                       flyoutMappedHwnds.end());
+    std::vector<HWND> result;
+    result.reserve(flyoutMappedHwnds.size());
+    std::unordered_set<HWND> added;
+
+    for (HWND hwnd : computedOrder) {
+        if (mappedSet.find(hwnd) != mappedSet.end() &&
+            added.insert(hwnd).second) {
+            result.push_back(hwnd);
+        }
+    }
+
+    for (HWND hwnd : flyoutMappedHwnds) {
+        if (added.insert(hwnd).second) {
+            result.push_back(hwnd);
+        }
+    }
+
+    return result;
+}
+
+int FindTaskItemIndex(HDPA taskItems, void* taskItem) {
+    if (!taskItems || !taskItem) {
+        return -1;
+    }
+
+    for (int i = 0; i < taskItems->cpItems; ++i) {
+        if (((void**)taskItems->pArray)[i] == taskItem) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+bool ApplyMovesToSlotIndices(void* taskGroup,
+                             HDPA taskItems,
+                             const std::vector<int>& slotIndices,
+                             const std::vector<void*>& desiredTaskItems) {
+    if (slotIndices.size() != desiredTaskItems.size()) {
+        Wh_Log(L"Auto-reorder apply: slot/task item count mismatch for group %p",
+               taskGroup);
+        return false;
+    }
+
+    if (DesktopOrderAlreadyMatches(taskItems, slotIndices, desiredTaskItems)) {
+        return true;
+    }
+
+    for (size_t targetPos = 0; targetPos < desiredTaskItems.size(); ++targetPos) {
+        const size_t targetSlotIndex =
+            static_cast<size_t>(slotIndices[targetPos]);
+        void* itemToMove = desiredTaskItems[targetPos];
+
+        while (true) {
+            taskItems = GetTaskItemsArray(taskGroup);
+            if (!taskItems) {
+                return false;
+            }
+
+            const int currentIndex = FindTaskItemIndex(taskItems, itemToMove);
+            if (currentIndex < 0) {
+                Wh_Log(L"Auto-reorder apply: task item not found during move");
+                return false;
+            }
+
+            if (static_cast<size_t>(currentIndex) == targetSlotIndex) {
+                break;
+            }
+
+            const int stepIndex = currentIndex < static_cast<int>(targetSlotIndex)
+                                      ? currentIndex + 1
+                                      : currentIndex - 1;
+            void* neighborItem = ((void**)taskItems->pArray)[stepIndex];
+            if (!MoveTaskInGroup(taskGroup, itemToMove, neighborItem)) {
+                Wh_Log(L"Auto-reorder apply: MoveTaskInGroup failed (%d -> %zu)",
+                       currentIndex, targetSlotIndex);
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+void VisitTaskListLongPtrFromTray(HWND trayWnd,
+                                  bool secondary,
+                                  const std::function<void(void*)>& callback) {
+    if (!trayWnd) {
+        return;
+    }
+
+    HWND taskBandWnd =
+        secondary ? FindWindowEx(trayWnd, nullptr, L"WorkerW", nullptr)
+                  : reinterpret_cast<HWND>(GetProp(trayWnd, L"TaskbandHWND"));
+    if (!taskBandWnd) {
+        return;
+    }
+
+    HWND taskListWnd =
+        FindWindowEx(taskBandWnd, nullptr, L"MSTaskListWClass", nullptr);
+    if (!taskListWnd) {
+        return;
+    }
+
+    void* taskListLongPtr =
+        reinterpret_cast<void*>(GetWindowLongPtr(taskListWnd, 0));
+    if (taskListLongPtr) {
+        callback(taskListLongPtr);
+    }
+}
+
+void ForEachTaskListLongPtr(
+    const std::function<void(void* taskListLongPtr)>& callback) {
+    VisitTaskListLongPtrFromTray(FindWindowW(L"Shell_TrayWnd", nullptr), false,
+                                 callback);
+
+    EnumWindows(
+        [](HWND hwnd, LPARAM lParam) -> BOOL {
+            WCHAR className[32];
+            if (GetClassNameW(hwnd, className, ARRAYSIZE(className)) == 0) {
+                return TRUE;
+            }
+
+            if (_wcsicmp(className, L"Shell_SecondaryTrayWnd") != 0) {
+                return TRUE;
+            }
+
+            auto* callbackRef =
+                reinterpret_cast<const std::function<void(void*)>*>(lParam);
+            VisitTaskListLongPtrFromTray(hwnd, true, *callbackRef);
+            return TRUE;
+        },
+        reinterpret_cast<LPARAM>(&callback));
+}
+
+void* FindTaskGroupForDesktopWindows(void* taskListLongPtr,
+                                     const std::vector<HWND>& targetHwnds);
+
+void* TryCachedFlyoutTaskGroup(const std::vector<HWND>& targetHwnds) {
+    if (!g_cachedTaskGroupFromFlyout) {
+        return nullptr;
+    }
+
+    HDPA taskItems = GetTaskItemsArray(g_cachedTaskGroupFromFlyout);
+    if (!taskItems || taskItems->cpItems <= 1) {
+        return nullptr;
+    }
+
+    size_t matchCount = 0;
+    for (HWND targetHwnd : targetHwnds) {
+        for (int j = 0; j < taskItems->cpItems; ++j) {
+            void* taskItem = ((void**)taskItems->pArray)[j];
+            if (GetHwndFromTaskItem(taskItem) == targetHwnd) {
+                ++matchCount;
+                break;
+            }
+        }
+    }
+
+    if (matchCount < 2) {
+        return nullptr;
+    }
+
+    Wh_Log(L"Auto-reorder apply: using cached flyout task group %p (%zu "
+           L"match(es))",
+           g_cachedTaskGroupFromFlyout, matchCount);
+    return g_cachedTaskGroupFromFlyout;
+}
+
+void* FindTaskGroupForTargetHwnds(const std::vector<HWND>& targetHwnds) {
+    AutoReorder_TraceStep2U(L"T50 find_task_group:enter", targetHwnds.size(), 0);
+    if (void* cached = TryCachedFlyoutTaskGroup(targetHwnds)) {
+        AutoReorder_TraceStepU(L"T50b find_task_group:from_flyout_cache",
+                               reinterpret_cast<ULONG_PTR>(cached));
+        return cached;
+    }
+
+    if (void* fromMapping = FindTaskGroupViaThumbnailMapping(targetHwnds)) {
+        AutoReorder_TraceStepU(L"T51 find_task_group:from_thumbnail_mapping",
+                               reinterpret_cast<ULONG_PTR>(fromMapping));
+        return fromMapping;
+    }
+
+    AutoReorder_TraceStep(L"T52 find_task_group:before_foreach_tasklist");
+    void* bestTaskGroup = nullptr;
+    size_t bestMatchCount = 0;
+
+    ForEachTaskListLongPtr([&](void* taskListLongPtr) {
+        AutoReorder_TraceStepU(L"T53 find_task_group:foreach_list_ptr",
+                               reinterpret_cast<ULONG_PTR>(taskListLongPtr));
+        void* taskGroup =
+            FindTaskGroupForDesktopWindows(taskListLongPtr, targetHwnds);
+        if (!taskGroup) {
+            return;
+        }
+
+        HDPA taskItems = GetTaskItemsArray(taskGroup);
+        if (!taskItems) {
+            return;
+        }
+
+        size_t matchCount = 0;
+        for (HWND targetHwnd : targetHwnds) {
+            for (int j = 0; j < taskItems->cpItems; ++j) {
+                void* taskItem = ((void**)taskItems->pArray)[j];
+                if (GetHwndFromTaskItem(taskItem) == targetHwnd) {
+                    ++matchCount;
+                    break;
+                }
+            }
+        }
+
+        if (matchCount > bestMatchCount) {
+            bestMatchCount = matchCount;
+            bestTaskGroup = taskGroup;
+        }
+    });
+
+    AutoReorder_TraceStep2U(L"T55 find_task_group:exit",
+                              reinterpret_cast<ULONG_PTR>(bestTaskGroup),
+                              bestMatchCount);
+    return bestMatchCount > 0 ? bestTaskGroup : nullptr;
+}
+
+std::vector<HWND> GetHwndsInTaskGroup(void* taskGroup) {
+    std::vector<HWND> hwnds;
+    HDPA taskItems = GetTaskItemsArray(taskGroup);
+    if (!taskItems) {
+        return hwnds;
+    }
+
+    for (int i = 0; i < taskItems->cpItems; ++i) {
+        void* taskItem = ((void**)taskItems->pArray)[i];
+        HWND hwnd = GetHwndFromTaskItem(taskItem);
+        if (hwnd) {
+            hwnds.push_back(hwnd);
+        }
+    }
+
+    return hwnds;
+}
+
+void* FindTaskGroupForDesktopWindows(
+    void* taskListLongPtr,
+    const std::vector<HWND>& targetHwnds) {
+    HDPA buttonGroups = GetButtonGroupsDpa(taskListLongPtr);
+    if (!buttonGroups) {
+        return nullptr;
+    }
+
+    void* bestTaskGroup = nullptr;
+    size_t bestMatchCount = 0;
+
+    for (int i = 0; i < buttonGroups->cpItems; ++i) {
+        void* btnGroup = ((void**)buttonGroups->pArray)[i];
+        if (!btnGroup) {
+            continue;
+        }
+
+        int groupType = CTaskBtnGroup_GetGroupType(btnGroup);
+        if (groupType != 1 && groupType != 3) {
+            continue;
+        }
+
+        void* taskGroup = CTaskBtnGroup_GetGroup(btnGroup);
+        if (!taskGroup) {
+            continue;
+        }
+
+        HDPA taskItems = GetTaskItemsArray(taskGroup);
+        if (!taskItems) {
+            continue;
+        }
+
+        size_t matchCount = 0;
+        for (HWND targetHwnd : targetHwnds) {
+            for (int j = 0; j < taskItems->cpItems; ++j) {
+                void* taskItem = ((void**)taskItems->pArray)[j];
+                if (GetHwndFromTaskItem(taskItem) == targetHwnd) {
+                    ++matchCount;
+                    break;
+                }
+            }
+        }
+
+        if (matchCount > bestMatchCount) {
+            bestMatchCount = matchCount;
+            bestTaskGroup = taskGroup;
+        }
+    }
+
+    return bestMatchCount > 0 ? bestTaskGroup : nullptr;
+}
+
+bool ApplyOrderToTaskGroup(void* taskGroup,
+                           const GUID& desktopId,
+                           const std::vector<HWND>& targetOrder,
+                           bool flyoutOnlyApply) {
+    AutoReorder_TraceStep2U(
+        L"T60 apply_order_to_group:enter",
+        reinterpret_cast<ULONG_PTR>(taskGroup),
+        flyoutOnlyApply ? 1 : 0);
+    HDPA taskItems = GetTaskItemsArray(taskGroup);
+    if (!taskItems || taskItems->cpItems <= 1) {
+        Wh_Log(L"Auto-reorder apply: skipping group %p (%d thumbnail(s) in "
+               L"group)",
+               taskGroup, taskItems ? taskItems->cpItems : 0);
+        return true;
+    }
+
+    std::vector<int> desktopSlotIndices;
+    std::unordered_map<HWND, void*> hwndToTaskItem;
+
+    for (int i = 0; i < taskItems->cpItems; ++i) {
+        void* taskItem = ((void**)taskItems->pArray)[i];
+        HWND hwnd = GetHwndFromTaskItem(taskItem);
+        if (!hwnd) {
+            continue;
+        }
+
+        GUID windowDesktopId{};
+        if (!GetWindowVirtualDesktopIdForHwnd(hwnd, windowDesktopId)) {
+            continue;
+        }
+
+        if (!IsEqualGUID(windowDesktopId, desktopId)) {
+            continue;
+        }
+
+        desktopSlotIndices.push_back(i);
+        hwndToTaskItem[hwnd] = taskItem;
+    }
+
+    if (desktopSlotIndices.size() <= 1) {
+        Wh_Log(L"Auto-reorder apply: skipping group %p (<=1 window on desktop)",
+               taskGroup);
+        return true;
+    }
+
+    const std::vector<HWND> flyoutMapped =
+        GetFlyoutMappedHwndsForTaskGroup(taskGroup);
+    const size_t flyoutMappedCount = flyoutMapped.size();
+
+    if (targetOrder.size() <= 1) {
+        Wh_Log(L"Auto-reorder apply: skipping group %p (<=1 window in apply set)",
+               taskGroup);
+        return true;
+    }
+
+    Wh_Log(L"Auto-reorder apply: task group %p — %s %zu window(s) on desktop "
+           L"(%zu in flyout mapping)",
+           taskGroup,
+           flyoutOnlyApply ? L"flyout preview for" : L"reordering",
+           desktopSlotIndices.size(), flyoutMappedCount);
+
+    std::vector<void*> desiredTaskItems;
+    desiredTaskItems.reserve(desktopSlotIndices.size());
+
+    for (HWND hwnd : targetOrder) {
+        auto it = hwndToTaskItem.find(hwnd);
+        if (it != hwndToTaskItem.end()) {
+            desiredTaskItems.push_back(it->second);
+        }
+    }
+
+    for (int slotIndex : desktopSlotIndices) {
+        void* taskItem = ((void**)taskItems->pArray)[slotIndex];
+        HWND hwnd = GetHwndFromTaskItem(taskItem);
+        if (!hwnd) {
+            continue;
+        }
+
+        bool alreadyListed = false;
+        for (void* listed : desiredTaskItems) {
+            if (listed == taskItem) {
+                alreadyListed = true;
+                break;
+            }
+        }
+
+        if (!alreadyListed) {
+            desiredTaskItems.push_back(taskItem);
+        }
+    }
+
+    if (desiredTaskItems.size() != desktopSlotIndices.size()) {
+        Wh_Log(L"Auto-reorder apply: task item count mismatch for group %p",
+               taskGroup);
+        return false;
+    }
+
+    const std::vector<int> moveSlotIndices = desktopSlotIndices;
+
+    if (flyoutMappedCount >= 2) {
+        AutoReorder_TraceStep2U(L"T62 apply_order_to_group:before_try_xaml",
+                                reinterpret_cast<ULONG_PTR>(taskGroup),
+                                flyoutMappedCount);
+        std::vector<HWND> flyoutVisualOrder =
+            BuildFlyoutAlignedApplyOrder(targetOrder, flyoutMapped);
+        if (TryApplyXamlFlyoutOrder(taskGroup, flyoutVisualOrder)) {
+            Wh_Log(L"Auto-reorder apply: flyout preview updated (%zu of %zu "
+                   L"visible thumbnail(s))",
+                   flyoutVisualOrder.size(), desktopSlotIndices.size());
+        } else {
+            QueuePendingXamlFlyoutOrder(taskGroup, flyoutVisualOrder);
+        }
+    } else if (flyoutOnlyApply && targetOrder.size() >= 2) {
+        QueuePendingXamlFlyoutOrder(taskGroup, targetOrder);
+    }
+
+    if (flyoutOnlyApply) {
+        AutoReorder_TraceStep(L"T64 apply_order_to_group:exit flyout_only");
+        return true;
+    }
+
+    if (DesktopOrderAlreadyMatches(taskItems, moveSlotIndices,
+                                   desiredTaskItems)) {
+        Wh_Log(L"Auto-reorder apply: group %p order already correct (idempotent "
+               L"skip)",
+               taskGroup);
+        return true;
+    }
+
+    const DWORD xamlTid = g_xamlTaskbarThreadId.load();
+    if (xamlTid && GetCurrentThreadId() != xamlTid) {
+        Wh_Log(L"refusing DPA moves on thread %u (XAML taskbar thread is %u)",
+               GetCurrentThreadId(), xamlTid);
+        return false;
+    }
+
+    if (!ApplyMovesToSlotIndices(taskGroup, taskItems, moveSlotIndices,
+                                 desiredTaskItems)) {
+        return false;
+    }
+
+    if (!desiredTaskItems.empty() && AutoReorder_IsXamlFlyoutPreviewActive()) {
+        NotifyThumbnailFlyoutReordered(taskGroup, desiredTaskItems.front());
+    }
+
+    return true;
+}
+
+bool ApplyFlyoutOnlyFromCacheImpl(
+    const std::vector<AutoReorderAppRules>& appRules) {
+    Wh_Log(L"Auto-reorder apply: flyout-only safe pass (pending/cache only)");
+    AutoReorder_TraceStep2U(L"T20 flyout_cache:enter",
+                            g_pendingXamlFlyoutOrder.size(), appRules.size());
+
+    std::vector<void*> pendingGroups;
+    pendingGroups.reserve(g_pendingXamlFlyoutOrder.size());
+    for (const auto& entry : g_pendingXamlFlyoutOrder) {
+        pendingGroups.push_back(entry.first);
+    }
+    bool pendingApplied = false;
+    for (void* taskGroup : pendingGroups) {
+        AutoReorder_TraceStepU(L"T21 flyout_cache:before_try_pending",
+                               reinterpret_cast<ULONG_PTR>(taskGroup));
+        if (AutoReorder_TryApplyPendingXamlFlyoutOrder(taskGroup)) {
+            pendingApplied = true;
+        }
+        AutoReorder_TraceStepU(L"T22 flyout_cache:after_try_pending",
+                               reinterpret_cast<ULONG_PTR>(taskGroup));
+    }
+
+    const bool flyoutOpen = AutoReorder_IsXamlFlyoutPreviewActive();
+    if (flyoutOpen && !AutoReorder_FlyoutThumbnailsReady()) {
+        Wh_Log(L"Auto-reorder apply: flyout thumbnails not ready yet (waiting "
+               L"for preview to finish loading)");
+        AutoReorder_TraceStep(L"T23b flyout_cache:exit thumbnails_not_ready");
+        return true;
+    }
+
+    if (pendingApplied && flyoutOpen) {
+        Wh_Log(L"Auto-reorder apply: flyout preview updated from pending queue "
+               L"(skipping duplicate cache apply)");
+        AutoReorder_TraceStep(L"T32 flyout_cache:exit after_pending_apply");
+        return true;
+    }
+
+    const bool hasMapping = AutoReorder_HasFlyoutThumbnailMapping();
+    AutoReorder_TraceStep2U(L"T23 flyout_cache:flyout_state",
+                            flyoutOpen ? 1 : 0, hasMapping ? 1 : 0);
+    if (!flyoutOpen && !hasMapping) {
+        if (pendingGroups.empty()) {
+            Wh_Log(L"Auto-reorder apply: flyout not open; hover the taskbar "
+                   L"button to apply");
+        }
+        return true;
+    }
+
+    if (appRules.empty()) {
+        AutoReorder_TraceStep(L"T32 flyout_cache:exit no_rules");
+        return true;
+    }
+
+    AutoReorder_TraceStep(L"T24 flyout_cache:before_enumerate_desktops");
+    std::vector<GUID> desktops = EnumerateVirtualDesktops();
+    AutoReorder_TraceStep2U(L"T25 flyout_cache:after_enumerate_desktops",
+                            desktops.size(), 0);
+    if (desktops.empty()) {
+        return false;
+    }
+
+    bool anyApplied = false;
+
+    for (const GUID& desktopId : desktops) {
+        for (const AutoReorderAppRules& appRule : appRules) {
+            AutoReorder_TraceStepU(L"T26 flyout_cache:app_loop",
+                                   reinterpret_cast<ULONG_PTR>(
+                                       appRule.app.c_str()));
+            std::vector<HWND> targetOrder;
+            if (!AutoReorder_TryGetCachedDesktopOrder(appRule.app, desktopId,
+                                                      targetOrder) ||
+                targetOrder.size() <= 1) {
+                continue;
+            }
+
+            AutoReorder_TraceStep(L"T27 flyout_cache:before_resolve_task_group");
+            void* taskGroup = g_cachedTaskGroupFromFlyout;
+            if (!taskGroup) {
+                taskGroup = FindTaskGroupViaThumbnailMapping(targetOrder);
+            }
+
+            AutoReorder_TraceStepU(L"T28 flyout_cache:task_group",
+                                   reinterpret_cast<ULONG_PTR>(taskGroup));
+
+            if (!taskGroup) {
+                Wh_Log(L"Auto-reorder apply: no cached task group for %s "
+                       L"(hover the taskbar button)",
+                       appRule.app.c_str());
+                continue;
+            }
+
+            const std::vector<HWND> flyoutMapped =
+                GetFlyoutMappedHwndsForTaskGroup(taskGroup);
+            AutoReorder_TraceStep2U(L"T29 flyout_cache:flyout_mapped_count",
+                                    reinterpret_cast<ULONG_PTR>(taskGroup),
+                                    flyoutMapped.size());
+
+            const std::vector<HWND> groupHwnds =
+                GetHwndsInTaskGroup(taskGroup);
+            size_t inGroup = 0;
+            for (HWND h : targetOrder) {
+                if (std::find(groupHwnds.begin(), groupHwnds.end(), h) !=
+                    groupHwnds.end()) {
+                    ++inGroup;
+                }
+            }
+            const bool topMapped =
+                !targetOrder.empty() &&
+                std::find(flyoutMapped.begin(), flyoutMapped.end(),
+                          targetOrder.front()) != flyoutMapped.end();
+            const bool partialCoverage =
+                inGroup >= 2 &&
+                (!topMapped || flyoutMapped.size() < inGroup);
+            if (partialCoverage) {
+                Wh_Log(L"partial flyout coverage (%zu mapped / %zu in group); "
+                       L"applying to group DPA",
+                       flyoutMapped.size(), inGroup);
+                for (size_t i = 0; i < flyoutMapped.size(); ++i) {
+                    Wh_Log(L"mapped[%zu] hwnd %p", i, flyoutMapped[i]);
+                }
+                for (size_t i = 0; i < groupHwnds.size(); ++i) {
+                    Wh_Log(L"group[%zu] hwnd %p", i, groupHwnds[i]);
+                }
+                if (ApplyOrderToTaskGroup(taskGroup, desktopId, targetOrder,
+                                          false)) {
+                    anyApplied = true;
+                    Wh_Log(L"group DPA reordered (%zu window(s))", inGroup);
+                    const std::vector<HWND> after =
+                        GetHwndsInTaskGroup(taskGroup);
+                    for (size_t i = 0; i < after.size(); ++i) {
+                        Wh_Log(L"after[%zu] hwnd %p", i, after[i]);
+                    }
+                    continue;
+                }
+                Wh_Log(L"group DPA reorder failed; falling back to flyout-only");
+            }
+
+            if (flyoutMapped.size() < 2) {
+                QueuePendingXamlFlyoutOrder(taskGroup, targetOrder);
+                continue;
+            }
+
+            const std::vector<HWND> flyoutOrder =
+                BuildFlyoutAlignedApplyOrder(targetOrder, flyoutMapped);
+            if (flyoutOrder.size() < 2) {
+                continue;
+            }
+
+            AutoReorder_TraceStep(L"T30 flyout_cache:before_try_xaml");
+            if (TryApplyXamlFlyoutOrder(taskGroup, flyoutOrder)) {
+                AutoReorder_TraceStep(L"T31 flyout_cache:after_try_xaml ok");
+                anyApplied = true;
+                Wh_Log(L"Auto-reorder apply: flyout preview updated from cache "
+                       L"for %s (%zu thumbnail(s))",
+                       appRule.app.c_str(), flyoutOrder.size());
+            } else {
+                AutoReorder_TraceStep(L"T31 flyout_cache:after_try_xaml fail");
+                // Keep full engine order queued when flyout coverage is partial.
+                QueuePendingXamlFlyoutOrder(
+                    taskGroup,
+                    (flyoutMapped.size() < inGroup) ? targetOrder : flyoutOrder);
+            }
+        }
+    }
+
+    if (!anyApplied && pendingGroups.empty()) {
+        Wh_Log(L"Auto-reorder apply: flyout safe pass made no changes yet");
+    }
+
+    AutoReorder_TraceStep(L"T32 flyout_cache:exit");
+    return true;
+}
+
+}  // namespace
+
+std::atomic<bool> g_deferApplyUntilFlyoutMapping{false};
+std::atomic<bool> g_pendingSessionApply{false};
+
+bool AutoReorder_ShouldDeferApply() {
+    return g_deferApplyUntilFlyoutMapping.load();
+}
+
+namespace {
+
+void QueuePendingFromEngineCache() {
+    if (!g_rulesValid || g_rules.apps.empty()) {
+        return;
+    }
+
+    std::vector<GUID> desktops = EnumerateVirtualDesktops();
+    bool queued = false;
+
+    for (const AutoReorderAppRules& appRule : g_rules.apps) {
+        for (const GUID& desktopId : desktops) {
+            std::vector<HWND> targetOrder;
+            if (!AutoReorder_TryGetCachedDesktopOrder(appRule.app, desktopId,
+                                                      targetOrder) ||
+                targetOrder.size() <= 1) {
+                continue;
+            }
+
+            void* taskGroup = g_cachedTaskGroupFromFlyout;
+            if (!taskGroup) {
+                taskGroup = FindTaskGroupViaThumbnailMapping(targetOrder);
+            }
+
+            if (!taskGroup) {
+                continue;
+            }
+
+            const std::vector<HWND> flyoutMapped =
+                GetFlyoutMappedHwndsForTaskGroup(taskGroup);
+            std::vector<HWND> orderToQueue = targetOrder;
+            if (flyoutMapped.size() >= 2) {
+                const std::vector<HWND> groupHwnds =
+                    GetHwndsInTaskGroup(taskGroup);
+                size_t inGroup = 0;
+                for (HWND h : targetOrder) {
+                    if (std::find(groupHwnds.begin(), groupHwnds.end(), h) !=
+                        groupHwnds.end()) {
+                        ++inGroup;
+                    }
+                }
+                // Partial coverage: queue full engine order (not truncated).
+                if (flyoutMapped.size() >= inGroup) {
+                    orderToQueue =
+                        BuildFlyoutAlignedApplyOrder(targetOrder, flyoutMapped);
+                }
+            }
+
+            if (orderToQueue.size() >= 2) {
+                QueuePendingXamlFlyoutOrder(taskGroup, orderToQueue);
+                queued = true;
+            }
+        }
+    }
+
+    if (queued) {
+        Wh_Log(L"Auto-reorder apply: queued engine order for next flyout open");
+    }
+}
+
+void MarkSessionApplyPending() {
+    g_pendingSessionApply = true;
+    QueuePendingFromEngineCache();
+
+    if (!g_cachedTaskGroupFromFlyout &&
+        g_pendingXamlFlyoutOrder.empty()) {
+        Wh_Log(L"Auto-reorder apply: session apply pending (hover the app's "
+               L"taskbar button to apply)");
+        return;
+    }
+
+    Wh_Log(L"Auto-reorder apply: session apply pending (hover the taskbar "
+           L"button if the preview was closed)");
+}
+
+}  // namespace
+
+void AutoReorder_QueuePendingFromEngineCache() {
+    QueuePendingFromEngineCache();
+}
+
+bool AutoReorder_ApplyFlyoutOnlyFromCache(
+    const std::vector<AutoReorderAppRules>& appRules) {
+    AutoReorder_TraceStep(L"T19 flyout_cache_wrapper:enter");
+    const bool ok = ApplyFlyoutOnlyFromCacheImpl(appRules);
+    AutoReorder_TraceStep(L"T19b flyout_cache_wrapper:exit");
+    return ok;
+}
+
+bool RunAutoReorderApplyOnTaskbarThread(
+    const std::vector<AutoReorderAppRules>& appRules,
+    bool fromDeferredTimer) {
+    AutoReorder_TraceStep2U(L"T10 run_apply:enter", fromDeferredTimer ? 1 : 0,
+                            appRules.size());
+    AutoReorder_TraceStep(L"T11 run_apply:before_mutex");
+    std::lock_guard<std::mutex> lock(g_autoReorderPassMutex);
+    AutoReorder_TraceStep(L"T11b run_apply:mutex_acquired");
+
+    bool expected = false;
+    if (!g_autoReorderPassRunning.compare_exchange_strong(expected, true)) {
+        AutoReorder_TraceStep(L"T12 run_apply:pass_already_running_skip");
+        Wh_Log(L"Auto-reorder apply: pass already in progress, skipped");
+        return false;
+    }
+
+    struct PassRunningGuard {
+        ~PassRunningGuard() { g_autoReorderPassRunning = false; }
+    } runningGuard;
+
+    g_deferApplyUntilFlyoutMapping = false;
+
+    if (!fromDeferredTimer) {
+        AutoReorder_TraceStep(L"T13 run_apply:queue_deferred_path");
+        Wh_Log(L"Auto-reorder apply: queuing flyout-only apply (open or hover "
+               L"the taskbar preview)");
+        MarkSessionApplyPending();
+        ScheduleDeferredAutoReorderApply();
+        AutoReorder_TraceStep(L"T13b run_apply:queue_deferred_path_done");
+        return true;
+    }
+
+    AutoReorder_TraceStep(L"T14 run_apply:before_flyout_cache");
+    struct Ctx {
+        const std::vector<AutoReorderAppRules>* rules;
+        bool ok;
+    };
+    Ctx ctx{&appRules, false};
+    const bool ran = RunOnXamlTaskbarThread(
+        [](void* p) {
+            auto* c = (Ctx*)p;
+            c->ok = AutoReorder_ApplyFlyoutOnlyFromCache(*c->rules);
+        },
+        &ctx);
+    if (!ran) {
+        Wh_Log(L"marshal failed; apply on current thread (may skip DPA moves)");
+        ctx.ok = AutoReorder_ApplyFlyoutOnlyFromCache(appRules);
+    }
+    const bool ok = ctx.ok;
+    AutoReorder_TraceStep(L"T15 run_apply:after_flyout_cache");
+    return ok;
+}
+
+bool AutoReorder_ApplyReorders(
+    const std::vector<AutoReorderAppRules>& appRules,
+    bool flyoutOnlyApply) {
+    AutoReorder_TraceStep2U(L"T40 full_apply:enter", flyoutOnlyApply ? 1 : 0,
+                            appRules.size());
+    if (appRules.empty()) {
+        return true;
+    }
+
+    if (!TaskbarSymbolsReady()) {
+        Wh_Log(L"Auto-reorder apply: taskbar symbols not available");
+        return false;
+    }
+
+    std::vector<GUID> desktops = EnumerateVirtualDesktops();
+    if (desktops.empty()) {
+        Wh_Log(L"Auto-reorder apply: no virtual desktops to process");
+        return false;
+    }
+
+    bool anyApplied = false;
+
+    for (size_t desktopIndex = 0; desktopIndex < desktops.size();
+         ++desktopIndex) {
+        const GUID& desktopId = desktops[desktopIndex];
+
+        for (const AutoReorderAppRules& appRule : appRules) {
+            AutoReorder_TraceStepU(L"T41 full_apply:before_get_windows",
+                                   reinterpret_cast<ULONG_PTR>(
+                                       appRule.app.c_str()));
+            std::vector<HWND> windowHandles =
+                GetWindowsForAppOnDesktop(appRule.app, desktopId);
+            AutoReorder_TraceStep2U(L"T42 full_apply:after_get_windows",
+                                    windowHandles.size(), desktopIndex);
+            if (windowHandles.empty()) {
+                Wh_Log(L"Auto-reorder apply: desktop[%zu] %s has 0 visible "
+                       L"window(s), skipping",
+                       desktopIndex, appRule.app.c_str());
+                continue;
+            }
+
+            std::vector<HWND> targetOrder;
+            if (!AutoReorder_TryGetCachedDesktopOrder(appRule.app, desktopId,
+                                                      targetOrder)) {
+                Wh_Log(L"Auto-reorder apply: no cached order for %s on "
+                       L"desktop[%zu] (run engine pass first)",
+                       appRule.app.c_str(), desktopIndex);
+                continue;
+            }
+
+            if (targetOrder.size() <= 1) {
+                Wh_Log(L"Auto-reorder apply: cached order too small for %s",
+                       appRule.app.c_str());
+                continue;
+            }
+
+            AutoReorder_TraceStep(L"T43 full_apply:before_find_task_group");
+            void* taskGroup = FindTaskGroupForTargetHwnds(windowHandles);
+            AutoReorder_TraceStepU(L"T44 full_apply:after_find_task_group",
+                                   reinterpret_cast<ULONG_PTR>(taskGroup));
+            if (!taskGroup && g_cachedTaskGroupFromFlyout &&
+                GetFlyoutMappedHwndsForTaskGroup(g_cachedTaskGroupFromFlyout)
+                        .size() >= 2) {
+                taskGroup = g_cachedTaskGroupFromFlyout;
+            }
+
+            if (!taskGroup) {
+                Wh_Log(L"Auto-reorder apply: no task group for %s on "
+                       L"desktop[%zu] (%zu candidate window(s))",
+                       appRule.app.c_str(), desktopIndex,
+                       windowHandles.size());
+                continue;
+            }
+
+            const size_t flyoutMappedCount =
+                GetFlyoutMappedHwndsForTaskGroup(taskGroup).size();
+
+            AutoReorder_TraceStep(L"T45 full_apply:before_apply_order_to_group");
+            if (!ApplyOrderToTaskGroup(taskGroup, desktopId, targetOrder,
+                                       flyoutOnlyApply)) {
+                Wh_Log(L"Auto-reorder apply: failed for %s on desktop[%zu]",
+                       appRule.app.c_str(), desktopIndex);
+                continue;
+            }
+            AutoReorder_TraceStep(L"T46 full_apply:after_apply_order_to_group");
+
+            anyApplied = true;
+            Wh_Log(L"Auto-reorder apply: apply pass done for %s on desktop[%zu] "
+                   L"(%zu in cached order, %zu in flyout mapping)",
+                   appRule.app.c_str(), desktopIndex, targetOrder.size(),
+                   flyoutMappedCount);
+        }
+    }
+
+    if (!anyApplied) {
+        Wh_Log(L"Auto-reorder apply: no groups updated");
+    }
+
+    AutoReorder_TraceStep(L"T47 full_apply:exit");
+    return true;
+}
+
+void AutoReorder_UninstallTraySubclass() {}
 
 std::optional<bool> IsOsFeatureEnabled(UINT32 featureId) {
     enum FEATURE_ENABLED_STATE {
@@ -1494,6 +5353,7 @@ BOOL Wh_ModInit() {
     Wh_Log(L">");
 
     LoadSettings();
+    Wh_Log(L"=== mod load ===");
 
     g_winVersion = GetExplorerVersion();
     if (g_winVersion == WinVersion::Unsupported) {
@@ -1545,12 +5405,12 @@ BOOL Wh_ModInit() {
     HMODULE kernelBaseModule = GetModuleHandle(L"kernelbase.dll");
     auto pKernelBaseLoadLibraryExW = (decltype(&LoadLibraryExW))GetProcAddress(
         kernelBaseModule, "LoadLibraryExW");
-    WindhawkUtils::SetFunctionHook(pKernelBaseLoadLibraryExW,
-                                   LoadLibraryExW_Hook,
-                                   &LoadLibraryExW_Original);
+    WindhawkUtils::Wh_SetFunctionHookT(pKernelBaseLoadLibraryExW,
+                                       LoadLibraryExW_Hook,
+                                       &LoadLibraryExW_Original);
 
-    WindhawkUtils::SetFunctionHook(DPA_GetPtr, DPA_GetPtr_Hook,
-                                   &DPA_GetPtr_Original);
+    WindhawkUtils::Wh_SetFunctionHookT(DPA_GetPtr, DPA_GetPtr_Hook,
+                                       &DPA_GetPtr_Original);
 
     g_initialized = true;
 
@@ -1577,10 +5437,22 @@ void Wh_ModAfterInit() {
     if (!g_explorerPatcherInitialized) {
         HandleLoadedExplorerPatcher();
     }
+
+    StartAutoReorderTimerIfNeeded();
+    UpdateReorderListener();
 }
 
 void Wh_ModUninit() {
     Wh_Log(L">");
+    Wh_Log(L"=== mod unload ===");
+
+    CancelTriggerRetryTimer();
+    CancelAutoReorderTimer();
+    CancelDeferredApplyTimer();
+    AutoReorder_UninstallTraySubclass();
+    StopReorderListenerThread();
+    AutoReorderUia_Uninit();
+    AutoReorderEnumeration_Uninit();
 }
 
 BOOL Wh_ModSettingsChanged(BOOL* bReload) {
@@ -1589,6 +5461,15 @@ BOOL Wh_ModSettingsChanged(BOOL* bReload) {
     bool prevOldTaskbarOnWin11 = g_settings.oldTaskbarOnWin11;
 
     LoadSettings();
+
+    UpdateReorderListener();
+
+    if (g_autoReorderDone.load()) {
+        // Re-parse rules on settings change, but do not schedule another auto-reorder
+        // pass in the same Explorer session (g_autoReorderDone remains set).
+        Wh_Log(L"Auto-reorder: settings updated; session pass already done, "
+               L"not re-running until Explorer/mod reload");
+    }
 
     *bReload = g_settings.oldTaskbarOnWin11 != prevOldTaskbarOnWin11;
 
